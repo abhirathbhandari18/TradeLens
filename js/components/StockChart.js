@@ -97,7 +97,7 @@ window.StockChart = function StockChart({
     setHoverIdx(Math.max(0, Math.min(safeSeries.length - 1, idx)));
   }
 
-  const timeframes = ["1D", "1W", "1M", "3M", "1Y"];
+  const timeframes = ["1D", "1W", "1M", "3M", "6M", "1Y", "5Y"];
 
   return h(
     "div",
@@ -250,43 +250,64 @@ window.StockChart = function StockChart({
           );
         }),
 
-        // Hover crosshair
+        // Hover crosshair & floating price pill on the graph
         hoverIdx !== null &&
           safeSeries[hoverIdx] &&
-          h(
-            "g",
-            null,
-            h("line", {
-              x1: xFor(hoverIdx),
-              y1: padTop,
-              x2: xFor(hoverIdx),
-              y2: padTop + plotH,
-              stroke: "#94a3b8",
-              strokeWidth: 1,
-              strokeDasharray: "3 3",
-            }),
-            h("circle", {
-              cx: xFor(hoverIdx),
-              cy: yFor(safeSeries[hoverIdx].close),
-              r: 4,
-              fill: strokeColor,
-              stroke: "#ffffff",
-              strokeWidth: 2,
-            })
-          )
-      ),
-      activePoint &&
-        h(
-          "div",
-          { className: "chart-tooltip-bar mono", style: { marginTop: 8, marginBottom: 4 } },
-          h("span", { style: { fontWeight: 600, color: "#0f172a" } }, activePoint.label),
-          h(
-            "span",
-            null,
-            `O ${window.TradeLensData.formatCurrency(activePoint.open, currency)}  ·  H ${window.TradeLensData.formatCurrency(activePoint.high, currency)}  ·  L ${window.TradeLensData.formatCurrency(activePoint.low, currency)}  ·  C ${window.TradeLensData.formatCurrency(activePoint.close, currency)}`
-          ),
-          h("span", { className: "text-muted" }, `Vol ${window.TradeLensData.formatCompactVolume(activePoint.volume)}`)
-        )
+          (() => {
+            const pt = safeSeries[hoverIdx];
+            const cx = xFor(hoverIdx);
+            const cy = yFor(pt.close);
+            const priceText = window.TradeLensData.formatCurrency(pt.close, currency);
+            const fullText = `${priceText} · ${pt.label}`;
+            const boxW = Math.max(120, fullText.length * 7.6 + 26);
+            const boxH = 28;
+            const boxX = Math.max(padLeft, Math.min(padLeft + plotW - boxW, cx - boxW / 2));
+            const boxY = cy - boxH - 10 < padTop ? cy + 10 : cy - boxH - 10;
+
+            return h(
+              "g",
+              null,
+              h("line", {
+                x1: cx,
+                y1: padTop,
+                x2: cx,
+                y2: padTop + plotH,
+                stroke: "#94a3b8",
+                strokeWidth: 1,
+                strokeDasharray: "3 3",
+              }),
+              h("circle", {
+                cx,
+                cy,
+                r: 4.5,
+                fill: strokeColor,
+                stroke: "#ffffff",
+                strokeWidth: 2,
+              }),
+              h("rect", {
+                x: boxX,
+                y: boxY,
+                width: boxW,
+                height: boxH,
+                rx: 6,
+                fill: "#0f172a",
+              }),
+              h(
+                "text",
+                {
+                  x: boxX + boxW / 2,
+                  y: boxY + 18,
+                  textAnchor: "middle",
+                  fontSize: "11.5",
+                  fontWeight: "600",
+                  fill: "#ffffff",
+                  fontFamily: "JetBrains Mono, monospace",
+                },
+                fullText
+              )
+            );
+          })()
+      )
     )
   );
 };

@@ -200,7 +200,9 @@ window.SettingsPage = function SettingsPage({ settings, onSaveSettings, onShowTo
                 h("option", { value: "1W" }, "1 Week (1W)"),
                 h("option", { value: "1M" }, "1 Month (1M)"),
                 h("option", { value: "3M" }, "3 Months (3M)"),
-                h("option", { value: "1Y" }, "1 Year (1Y)")
+                h("option", { value: "6M" }, "6 Months (6M)"),
+                h("option", { value: "1Y" }, "1 Year (1Y)"),
+                h("option", { value: "5Y" }, "5 Years (5Y)")
               )
             ),
             h(

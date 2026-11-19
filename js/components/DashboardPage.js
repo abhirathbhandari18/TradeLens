@@ -10,6 +10,7 @@ window.DashboardPage = function DashboardPage({
   onToggleWatchlist,
   cashBalance,
   onPlaceOrder,
+  onOpenMarkets,
   settings,
   onShowToast,
 }) {
@@ -400,7 +401,15 @@ window.DashboardPage = function DashboardPage({
             "div",
             { className: "card-header" },
             h("h2", { className: "card-title" }, "NSE Market Watch"),
-            h("span", { className: "text-muted", style: { fontSize: "12px" } }, `${window.TradeLensData.STOCKS.length} stocks`)
+            h(
+              "button",
+              {
+                type: "button",
+                className: "btn btn-ghost btn-sm",
+                onClick: onOpenMarkets,
+              },
+              "View All →"
+            )
           ),
           h(
             "div",

@@ -114,6 +114,7 @@
 
     const navItems = [
       { id: "dashboard", label: "Dashboard" },
+      { id: "markets", label: "All Shares", count: window.TradeLensData.STOCKS.length },
       { id: "watchlist", label: "Watchlist", count: watchlist.length },
       { id: "portfolio", label: "Portfolio" },
       { id: "holdings", label: "Holdings", count: holdings.length },
@@ -273,8 +274,16 @@
               onToggleWatchlist: handleToggleWatchlist,
               cashBalance,
               onPlaceOrder: handlePlaceOrder,
+              onOpenMarkets: () => setActivePage("markets"),
               settings,
               onShowToast: showToast,
+            }),
+          activePage === "markets" &&
+            h(window.MarketsPage, {
+              watchlist,
+              onToggleWatchlist: handleToggleWatchlist,
+              onOpenChart: handleOpenChart,
+              settings,
             }),
           activePage === "watchlist" &&
             h(window.WatchlistPage, {

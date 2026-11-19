@@ -163,7 +163,11 @@ window.HoldingsPage = function HoldingsPage({
                   const up = row.pnl >= 0;
                   return h(
                     "tr",
-                    { key: row.symbol },
+                    {
+                      key: row.symbol,
+                      style: { cursor: "pointer" },
+                      onClick: () => onOpenChart(row.symbol),
+                    },
                     h(
                       "td",
                       null,

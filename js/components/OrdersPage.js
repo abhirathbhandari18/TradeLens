@@ -89,7 +89,11 @@ window.OrdersPage = function OrdersPage({ orders, settings, onOpenChart }) {
                   const isBuy = ord.side === "BUY";
                   return h(
                     "tr",
-                    { key: ord.orderId },
+                    {
+                      key: ord.orderId,
+                      style: { cursor: "pointer" },
+                      onClick: () => onOpenChart(ord.symbol),
+                    },
                     h("td", { className: "mono text-muted", style: { fontSize: "12.5px" } }, ord.orderId),
                     h("td", { className: "text-muted", style: { fontSize: "12.5px" } }, ord.time),
                     h(

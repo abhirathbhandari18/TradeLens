@@ -1,6 +1,7 @@
 /**
  * TradeLens — Watchlist Page
- * Manage watched NSE/BSE stocks, target prices, notes, and jump to their chart.
+ * Displays watched NSE/BSE stocks with 7D sparklines, target prices, and notes.
+ * Clicking any row opens that share's chart on the Dashboard.
  */
 
 window.WatchlistPage = function WatchlistPage({
@@ -11,34 +12,9 @@ window.WatchlistPage = function WatchlistPage({
   onShowToast,
 }) {
   const h = React.createElement;
-  const [symbolInput, setSymbolInput] = React.useState("");
-  const [targetInput, setTargetInput] = React.useState("");
-  const [noteInput, setNoteInput] = React.useState("");
 
-  function handleAdd(e) {
-    e.preventDefault();
-    const sym = symbolInput.trim().toUpperCase();
-    if (!sym) return;
-    if (watchlist.some((item) => item.symbol === sym)) {
-      onShowToast(`${sym} is already in your watchlist.`);
-      return;
-    }
-    const next = [
-      ...watchlist,
-      {
-        symbol: sym,
-        targetPrice: targetInput.trim() || "—",
-        note: noteInput.trim() || "Watching price action",
-      },
-    ];
-    onUpdateWatchlist(next);
-    setSymbolInput("");
-    setTargetInput("");
-    setNoteInput("");
-    onShowToast(`Added ${sym} to watchlist`);
-  }
-
-  function handleRemove(sym) {
+  function handleRemove(e, sym) {
+    e.stopPropagation();
     const next = watchlist.filter((item) => item.symbol !== sym);
     onUpdateWatchlist(next);
     onShowToast(`Removed ${sym} from watchlist`);
@@ -84,63 +60,7 @@ window.WatchlistPage = function WatchlistPage({
         h(
           "p",
           { className: "page-subtitle" },
-          "Track Indian equities you are monitoring and set target entry prices."
-        )
-      )
-    ),
-
-    // Add to Watchlist Bar
-    h(
-      "div",
-      { className: "card", style: { marginBottom: 20 } },
-      h(
-        "div",
-        { className: "card-body" },
-        h(
-          "form",
-          {
-            onSubmit: handleAdd,
-            style: {
-              display: "grid",
-              gridTemplateColumns: "150px 150px 1fr auto",
-              gap: 12,
-              alignItems: "end",
-            },
-          },
-          h(
-            "div",
-            { className: "field" },
-            h("label", { className: "field-label" }, "NSE Symbol"),
-            h("input", {
-              className: "input",
-              placeholder: "e.g. RELIANCE",
-              value: symbolInput,
-              onChange: (e) => setSymbolInput(e.target.value),
-            })
-          ),
-          h(
-            "div",
-            { className: "field" },
-            h("label", { className: "field-label" }, "Target Price (₹)"),
-            h("input", {
-              className: "input",
-              placeholder: "e.g. 1350.00",
-              value: targetInput,
-              onChange: (e) => setTargetInput(e.target.value),
-            })
-          ),
-          h(
-            "div",
-            { className: "field" },
-            h("label", { className: "field-label" }, "Note"),
-            h("input", {
-              className: "input",
-              placeholder: "Optional thesis or alert note",
-              value: noteInput,
-              onChange: (e) => setNoteInput(e.target.value),
-            })
-          ),
-          h("button", { type: "submit", className: "btn btn-primary" }, "+ Add Stock")
+          "Click any share to view its live chart, or add stocks from Markets & Dashboard."
         )
       )
     ),
@@ -159,7 +79,7 @@ window.WatchlistPage = function WatchlistPage({
         ? h(
             "div",
             { className: "card-body text-muted", style: { textAlign: "center", padding: "36px 18px" } },
-            "Your watchlist is empty. Add an NSE symbol above or star one from the Dashboard."
+            "Your watchlist is empty. Star any stock from the Dashboard or Markets page."
           )
         : h(
             "div",
@@ -197,7 +117,11 @@ window.WatchlistPage = function WatchlistPage({
 
                   return h(
                     "tr",
-                    { key: item.symbol },
+                    {
+                      key: item.symbol,
+                      style: { cursor: "pointer" },
+                      onClick: () => onOpenChart(stock.symbol),
+                    },
                     h(
                       "td",
                       null,
@@ -228,18 +152,8 @@ window.WatchlistPage = function WatchlistPage({
                         "button",
                         {
                           type: "button",
-                          className: "btn btn-secondary btn-sm",
-                          style: { marginRight: 8 },
-                          onClick: () => onOpenChart(stock.symbol),
-                        },
-                        "View Chart"
-                      ),
-                      h(
-                        "button",
-                        {
-                          type: "button",
                           className: "btn btn-danger btn-sm",
-                          onClick: () => handleRemove(stock.symbol),
+                          onClick: (e) => handleRemove(e, stock.symbol),
                         },
                         "Remove"
                       )
@@ -252,4 +166,3 @@ window.WatchlistPage = function WatchlistPage({
     )
   );
 };
-
