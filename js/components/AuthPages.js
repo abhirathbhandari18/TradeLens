@@ -69,7 +69,7 @@ window.AuthPages = (() => {
       h(
         "div",
         { className: "text-muted", style: { fontSize: "12.5px" } },
-        "TradeLens India · Ready for Java & MySQL Integration"
+        "TradeLens India"
       )
     );
   }
