@@ -7,9 +7,9 @@ window.AuthPages = (() => {
 
   function BrandPane() {
     const preview = [
-      { symbol: "AAPL", name: "Apple Inc.", price: "$228.45", pct: "+1.38%", up: true },
-      { symbol: "MSFT", name: "Microsoft Corp.", price: "$417.90", pct: "+1.10%", up: true },
-      { symbol: "NVDA", name: "NVIDIA Corp.", price: "$141.25", pct: "-1.52%", up: false },
+      { symbol: "RELIANCE", name: "Reliance Industries Ltd.", price: "₹1,284.50", pct: "+1.45%", up: true },
+      { symbol: "TCS", name: "Tata Consultancy Services", price: "₹4,142.80", pct: "+0.88%", up: true },
+      { symbol: "HDFCBANK", name: "HDFC Bank Ltd.", price: "₹1,742.30", pct: "-0.66%", up: false },
     ];
 
     return h(
@@ -33,11 +33,11 @@ window.AuthPages = (() => {
       h(
         "div",
         { className: "auth-hero" },
-        h("h1", null, "Clear market charts and watchlists, without the noise."),
+        h("h1", null, "Clear NSE & BSE charts, without the noise."),
         h(
           "p",
           null,
-          "Track live equity quotes with your own market data API key, inspect intraday and multi-month price action, and organize your personal wishlist."
+          "Track Indian equities with your own market data API key, manage your watchlist, holdings, and orders, and monitor your portfolio in one workspace."
         ),
         h(
           "div",
@@ -69,7 +69,7 @@ window.AuthPages = (() => {
       h(
         "div",
         { className: "text-muted", style: { fontSize: "12.5px" } },
-        "TradeLens Frontend · Ready for Java & MySQL Integration"
+        "TradeLens India · Ready for Java & MySQL Integration"
       )
     );
   }
@@ -96,14 +96,15 @@ window.AuthPages = (() => {
 
     function handleDemoLogin() {
       try {
-        const user = window.TradeLensAPI.login("demo@tradelens.app", "demo1234");
+        const user = window.TradeLensAPI.login("demo@tradelens.in", "demo1234");
         onSuccess(user);
       } catch {
         const user = window.TradeLensAPI.signup({
-          name: "Abhirath",
-          email: "demo@tradelens.app",
+          name: "Abhirath Bhandari",
+          email: "demo@tradelens.in",
           password: "demo1234",
           tradingStyle: "Swing Trader",
+          panCard: "ABCDE1234F",
         });
         onSuccess(user);
       }
@@ -120,7 +121,7 @@ window.AuthPages = (() => {
           "div",
           { className: "auth-card" },
           h("h2", null, "Sign in to TradeLens"),
-          h("p", { className: "auth-sub" }, "Enter your credentials to open your dashboard."),
+          h("p", { className: "auth-sub" }, "Enter your credentials to open your trading workspace."),
           error && h("div", { className: "auth-error", style: { marginBottom: 14 } }, error),
           h(
             "form",
@@ -177,6 +178,7 @@ window.AuthPages = (() => {
   function SignupPage({ onSuccess, onSwitchToLogin }) {
     const [name, setName] = React.useState("");
     const [email, setEmail] = React.useState("");
+    const [panCard, setPanCard] = React.useState("");
     const [password, setPassword] = React.useState("");
     const [tradingStyle, setTradingStyle] = React.useState("Swing Trader");
     const [error, setError] = React.useState("");
@@ -189,7 +191,13 @@ window.AuthPages = (() => {
         return;
       }
       try {
-        const user = window.TradeLensAPI.signup({ name, email, password, tradingStyle });
+        const user = window.TradeLensAPI.signup({
+          name,
+          email,
+          password,
+          tradingStyle,
+          panCard,
+        });
         onSuccess(user);
       } catch (err) {
         setError(err.message);
@@ -207,7 +215,7 @@ window.AuthPages = (() => {
           "div",
           { className: "auth-card" },
           h("h2", null, "Create your account"),
-          h("p", { className: "auth-sub" }, "Set up your TradeLens workspace in seconds."),
+          h("p", { className: "auth-sub" }, "Set up your TradeLens India workspace in seconds."),
           error && h("div", { className: "auth-error", style: { marginBottom: 14 } }, error),
           h(
             "form",
@@ -220,7 +228,7 @@ window.AuthPages = (() => {
                 id: "signup-name",
                 className: "input",
                 type: "text",
-                placeholder: "Abhirath Sharma",
+                placeholder: "Abhirath Bhandari",
                 value: name,
                 onChange: (e) => setName(e.target.value),
               })
@@ -236,6 +244,20 @@ window.AuthPages = (() => {
                 placeholder: "you@example.com",
                 value: email,
                 onChange: (e) => setEmail(e.target.value),
+              })
+            ),
+            h(
+              "div",
+              { className: "field" },
+              h("label", { className: "field-label", htmlFor: "signup-pan" }, "PAN Card (Optional)"),
+              h("input", {
+                id: "signup-pan",
+                className: "input mono",
+                type: "text",
+                maxLength: 10,
+                placeholder: "ABCDE1234F",
+                value: panCard,
+                onChange: (e) => setPanCard(e.target.value.toUpperCase()),
               })
             ),
             h(
@@ -263,9 +285,10 @@ window.AuthPages = (() => {
                   value: tradingStyle,
                   onChange: (e) => setTradingStyle(e.target.value),
                 },
-                h("option", { value: "Day Trader" }, "Day Trader"),
+                h("option", { value: "Intraday" }, "Intraday"),
                 h("option", { value: "Swing Trader" }, "Swing Trader"),
-                h("option", { value: "Long-Term Investor" }, "Long-Term Investor")
+                h("option", { value: "Long-Term Investor" }, "Long-Term Investor"),
+                h("option", { value: "F&O Trader" }, "F&O Trader")
               )
             ),
             h("button", { type: "submit", className: "btn btn-primary", style: { width: "100%" } }, "Create Account")
@@ -283,4 +306,3 @@ window.AuthPages = (() => {
 
   return { LoginPage, SignupPage };
 })();
-

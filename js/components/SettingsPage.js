@@ -24,12 +24,12 @@ window.SettingsPage = function SettingsPage({ settings, onSaveSettings, onShowTo
     onSaveSettings(form);
     setTesting(true);
     setTestResult(null);
-    const res = await window.TradeLensAPI.fetchLiveQuote("AAPL");
+    const res = await window.TradeLensAPI.fetchLiveQuote("RELIANCE");
     setTesting(false);
     if (res.isLive) {
       setTestResult({
         ok: true,
-        text: `Connected! Live AAPL quote: $${res.price.toFixed(2)}`,
+        text: `Connected! Live RELIANCE quote: ₹${res.price.toFixed(2)}`,
       });
     } else {
       setTestResult({
@@ -181,8 +181,8 @@ window.SettingsPage = function SettingsPage({ settings, onSaveSettings, onShowTo
                   value: form.currency,
                   onChange: (e) => updateField("currency", e.target.value),
                 },
-                h("option", { value: "USD" }, "USD ($)"),
-                h("option", { value: "INR" }, "INR (₹)")
+                h("option", { value: "INR" }, "INR (₹)"),
+                h("option", { value: "USD" }, "USD ($)")
               )
             ),
             h(
@@ -224,7 +224,7 @@ window.SettingsPage = function SettingsPage({ settings, onSaveSettings, onShowTo
               h(
                 "div",
                 null,
-                h("div", { style: { fontWeight: 500 } }, "Wishlist Target Alerts"),
+                h("div", { style: { fontWeight: 500 } }, "Watchlist Target Alerts"),
                 h("div", { className: "text-muted", style: { fontSize: "12px" } }, "Highlight when a stock nears your target price")
               ),
               h(

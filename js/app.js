@@ -8,9 +8,12 @@
   function App() {
     const [user, setUser] = React.useState(() => window.TradeLensAPI.getSession());
     const [authView, setAuthView] = React.useState("login"); // "login" | "signup"
-    const [activePage, setActivePage] = React.useState("dashboard"); // "dashboard" | "wishlist" | "settings" | "account"
-    const [selectedSymbol, setSelectedSymbol] = React.useState("AAPL");
-    const [wishlist, setWishlist] = React.useState(() => window.TradeLensAPI.getWishlist());
+    const [activePage, setActivePage] = React.useState("dashboard");
+    const [selectedSymbol, setSelectedSymbol] = React.useState("RELIANCE");
+    const [watchlist, setWatchlist] = React.useState(() => window.TradeLensAPI.getWatchlist());
+    const [holdings, setHoldings] = React.useState(() => window.TradeLensAPI.getHoldings());
+    const [orders, setOrders] = React.useState(() => window.TradeLensAPI.getOrders());
+    const [cashBalance, setCashBalance] = React.useState(() => window.TradeLensAPI.getCashBalance());
     const [settings, setSettings] = React.useState(() => window.TradeLensAPI.getSettings());
     const [searchQuery, setSearchQuery] = React.useState("");
     const [toast, setToast] = React.useState("");
@@ -23,7 +26,10 @@
 
     function handleAuthSuccess(loggedInUser) {
       setUser(loggedInUser);
-      setWishlist(window.TradeLensAPI.getWishlist());
+      setWatchlist(window.TradeLensAPI.getWatchlist());
+      setHoldings(window.TradeLensAPI.getHoldings());
+      setOrders(window.TradeLensAPI.getOrders());
+      setCashBalance(window.TradeLensAPI.getCashBalance());
       setActivePage("dashboard");
       showToast(`Welcome back, ${loggedInUser.name}`);
     }
@@ -34,17 +40,39 @@
       setAuthView("login");
     }
 
-    function handleToggleWishlist(symbol) {
-      const exists = wishlist.some((w) => w.symbol === symbol);
+    function handleToggleWatchlist(symbol) {
+      const exists = watchlist.some((w) => w.symbol === symbol);
       const next = exists
-        ? wishlist.filter((w) => w.symbol !== symbol)
-        : [...wishlist, { symbol, targetPrice: "—", note: "Added from Dashboard" }];
-      setWishlist(window.TradeLensAPI.saveWishlist(next));
-      showToast(exists ? `Removed ${symbol} from wishlist` : `Added ${symbol} to wishlist`);
+        ? watchlist.filter((w) => w.symbol !== symbol)
+        : [...watchlist, { symbol, targetPrice: "—", note: "Added from Dashboard" }];
+      setWatchlist(window.TradeLensAPI.saveWatchlist(next));
+      showToast(exists ? `Removed ${symbol} from watchlist` : `Added ${symbol} to watchlist`);
     }
 
-    function handleUpdateWishlist(nextList) {
-      setWishlist(window.TradeLensAPI.saveWishlist(nextList));
+    function handleUpdateWatchlist(nextList) {
+      setWatchlist(window.TradeLensAPI.saveWatchlist(nextList));
+    }
+
+    function handlePlaceOrder(orderInput) {
+      try {
+        const res = window.TradeLensAPI.placeOrder(orderInput);
+        setCashBalance(res.cash);
+        setHoldings(res.holdings);
+        setOrders(res.orders);
+        showToast(`${res.order.side} ${res.order.qty} ${res.order.symbol} executed`);
+      } catch (err) {
+        showToast(err.message);
+      }
+    }
+
+    function handleAddFunds(amount) {
+      try {
+        const nextCash = window.TradeLensAPI.addFunds(amount);
+        setCashBalance(nextCash);
+        showToast(`Added ${window.TradeLensData.formatCurrency(amount, settings.currency)} to margin`);
+      } catch (err) {
+        showToast(err.message);
+      }
     }
 
     function handleSaveSettings(nextSettings) {
@@ -86,7 +114,10 @@
 
     const navItems = [
       { id: "dashboard", label: "Dashboard" },
-      { id: "wishlist", label: "Wishlist", count: wishlist.length },
+      { id: "watchlist", label: "Watchlist", count: watchlist.length },
+      { id: "portfolio", label: "Portfolio" },
+      { id: "holdings", label: "Holdings", count: holdings.length },
+      { id: "orders", label: "Orders", count: orders.length },
       { id: "settings", label: "Settings" },
       { id: "account", label: "Account" },
     ];
@@ -146,7 +177,7 @@
             ),
             h("input", {
               className: "input",
-              placeholder: "Search stocks (AAPL, NVDA...)",
+              placeholder: "Search NSE stocks (RELIANCE, TCS...)",
               value: searchQuery,
               onChange: (e) => setSearchQuery(e.target.value),
             }),
@@ -190,7 +221,7 @@
             "div",
             { className: "data-source-tag" },
             h("span", { className: `status-dot ${settings.apiKey ? "live" : ""}` }),
-            h("span", null, settings.apiKey ? `API: ${settings.provider}` : "Demo Feed")
+            h("span", null, settings.apiKey ? `API: ${settings.provider}` : "NSE Demo")
           ),
           h(
             "button",
@@ -228,16 +259,6 @@
                 item.count !== undefined && h("span", { className: "nav-count" }, item.count)
               )
             )
-          ),
-          h(
-            "div",
-            { className: "sidebar-note" },
-            h("div", { style: { fontWeight: 600, color: "#0f172a", marginBottom: 4 } }, "Java + MySQL Ready"),
-            h(
-              "div",
-              null,
-              "Frontend UI running with localStorage. Connect your Java REST API in js/api.js."
-            )
           )
         ),
 
@@ -248,18 +269,42 @@
             h(window.DashboardPage, {
               selectedSymbol,
               onSelectSymbol: setSelectedSymbol,
-              wishlist,
-              onToggleWishlist: handleToggleWishlist,
+              watchlist,
+              onToggleWatchlist: handleToggleWatchlist,
+              cashBalance,
+              onPlaceOrder: handlePlaceOrder,
               settings,
               onShowToast: showToast,
             }),
-          activePage === "wishlist" &&
-            h(window.WishlistPage, {
-              wishlist,
-              onUpdateWishlist: handleUpdateWishlist,
+          activePage === "watchlist" &&
+            h(window.WatchlistPage, {
+              watchlist,
+              onUpdateWatchlist: handleUpdateWatchlist,
               onOpenChart: handleOpenChart,
               settings,
               onShowToast: showToast,
+            }),
+          activePage === "portfolio" &&
+            h(window.PortfolioPage, {
+              holdings,
+              cashBalance,
+              onAddFunds: handleAddFunds,
+              onOpenHoldings: () => setActivePage("holdings"),
+              onOpenChart: handleOpenChart,
+              settings,
+              onShowToast: showToast,
+            }),
+          activePage === "holdings" &&
+            h(window.HoldingsPage, {
+              holdings,
+              settings,
+              onOpenChart: handleOpenChart,
+            }),
+          activePage === "orders" &&
+            h(window.OrdersPage, {
+              orders,
+              settings,
+              onOpenChart: handleOpenChart,
             }),
           activePage === "settings" &&
             h(window.SettingsPage, {
@@ -286,4 +331,3 @@
   const root = ReactDOM.createRoot(document.getElementById("root"));
   root.render(h(App));
 })();
-

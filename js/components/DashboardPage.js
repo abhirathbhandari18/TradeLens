@@ -1,13 +1,15 @@
 /**
  * TradeLens — Dashboard Page
- * Displays market overview, interactive stock graph, key fundamentals, and ticker switcher.
+ * Displays NSE/BSE market overview, interactive stock graph, quick order ticket, and ticker switcher.
  */
 
 window.DashboardPage = function DashboardPage({
   selectedSymbol,
   onSelectSymbol,
-  wishlist,
-  onToggleWishlist,
+  watchlist,
+  onToggleWatchlist,
+  cashBalance,
+  onPlaceOrder,
   settings,
   onShowToast,
 }) {
@@ -18,15 +20,18 @@ window.DashboardPage = function DashboardPage({
   const [chartType, setChartType] = React.useState(settings.defaultChartType || "area");
   const [customTicker, setCustomTicker] = React.useState("");
 
-  const loadQuote = React.useCallback(
-    async (sym) => {
-      setLoadingQuote(true);
-      const data = await window.TradeLensAPI.fetchLiveQuote(sym);
-      setQuote(data);
-      setLoadingQuote(false);
-    },
-    []
-  );
+  // Quick Order Ticket state
+  const [orderSide, setOrderSide] = React.useState("BUY");
+  const [orderType, setOrderType] = React.useState("MARKET");
+  const [orderQty, setOrderQty] = React.useState("1");
+  const [limitPrice, setLimitPrice] = React.useState("");
+
+  const loadQuote = React.useCallback(async (sym) => {
+    setLoadingQuote(true);
+    const data = await window.TradeLensAPI.fetchLiveQuote(sym);
+    setQuote(data);
+    setLoadingQuote(false);
+  }, []);
 
   React.useEffect(() => {
     loadQuote(selectedSymbol);
@@ -37,13 +42,23 @@ window.DashboardPage = function DashboardPage({
     window.TradeLensData.STOCKS.find((s) => s.symbol === selectedSymbol) ||
     window.TradeLensData.STOCKS[0];
 
-  const isPositive = activeStock.change >= 0;
-  const isWishlisted = wishlist.some((w) => w.symbol === activeStock.symbol);
+  const isWatchlisted = watchlist.some((w) => w.symbol === activeStock.symbol);
 
   const series = React.useMemo(
     () => window.TradeLensData.generateSeries(activeStock.symbol, activeStock.price, timeframe),
     [activeStock.symbol, activeStock.price, timeframe]
   );
+
+  // Compute change & direction for the selected duration so the rate badge and graph color always match
+  const periodChange =
+    series.length > 1
+      ? series[series.length - 1].close - series[0].close
+      : activeStock.change;
+  const periodChangePct =
+    series.length > 1 && series[0].close > 0
+      ? (periodChange / series[0].close) * 100
+      : activeStock.changePercent;
+  const isPositive = periodChange >= 0;
 
   const topFour = window.TradeLensData.STOCKS.slice(0, 4);
 
@@ -54,6 +69,21 @@ window.DashboardPage = function DashboardPage({
     onSelectSymbol(sym);
     setCustomTicker("");
   }
+
+  function handleOrderSubmit(e) {
+    e.preventDefault();
+    const execPrice =
+      orderType === "LIMIT" && Number(limitPrice) > 0 ? Number(limitPrice) : activeStock.price;
+    onPlaceOrder({
+      symbol: activeStock.symbol,
+      side: orderSide,
+      orderType,
+      qty: orderQty,
+      price: execPrice,
+    });
+  }
+
+  const estTotal = (parseInt(orderQty, 10) || 0) * (orderType === "LIMIT" && Number(limitPrice) > 0 ? Number(limitPrice) : activeStock.price);
 
   return h(
     "div",
@@ -69,8 +99,8 @@ window.DashboardPage = function DashboardPage({
           "p",
           { className: "page-subtitle" },
           activeStock.isLive
-            ? `Live quote via ${settings.provider} API`
-            : "Showing preview market data · Add an API key in Settings for live quotes"
+            ? `Live NSE quote via ${settings.provider} API`
+            : "Showing NSE preview data · Add an API key in Settings for live quotes"
         )
       ),
       h(
@@ -78,8 +108,8 @@ window.DashboardPage = function DashboardPage({
         { onSubmit: handleCustomTickerSubmit, style: { display: "flex", gap: 8 } },
         h("input", {
           className: "input",
-          style: { width: 170 },
-          placeholder: "Load ticker (e.g. AMD)",
+          style: { width: 190 },
+          placeholder: "Load NSE ticker (e.g. WIPRO)",
           value: customTicker,
           onChange: (e) => setCustomTicker(e.target.value),
         }),
@@ -122,11 +152,11 @@ window.DashboardPage = function DashboardPage({
       })
     ),
 
-    // Main Grid: Chart + Right Market List
+    // Main Grid: Chart + Right Sidebar (Order Ticket & Market Watch)
     h(
       "div",
       { className: "dashboard-grid" },
-      // Left: Main Stock Chart & Stats
+      // Left: Main Stock Chart & Fundamentals
       h(
         "div",
         { className: "card" },
@@ -157,7 +187,7 @@ window.DashboardPage = function DashboardPage({
                 h(
                   "span",
                   { className: `pill-badge ${isPositive ? "pill-gain" : "pill-loss"}` },
-                  `${isPositive ? "+" : ""}${activeStock.change.toFixed(2)} (${isPositive ? "+" : ""}${activeStock.changePercent.toFixed(2)}%)`
+                  `${isPositive ? "+" : ""}${periodChange.toFixed(2)} (${isPositive ? "+" : ""}${periodChangePct.toFixed(2)}%) · ${timeframe}`
                 )
               )
             ),
@@ -181,10 +211,10 @@ window.DashboardPage = function DashboardPage({
                 "button",
                 {
                   type: "button",
-                  className: isWishlisted ? "btn btn-secondary btn-sm" : "btn btn-primary btn-sm",
-                  onClick: () => onToggleWishlist(activeStock.symbol),
+                  className: isWatchlisted ? "btn btn-secondary btn-sm" : "btn btn-primary btn-sm",
+                  onClick: () => onToggleWatchlist(activeStock.symbol),
                 },
-                isWishlisted ? "★ In Wishlist" : "☆ Add to Wishlist"
+                isWatchlisted ? "★ In Watchlist" : "☆ Add to Watchlist"
               )
             )
           ),
@@ -248,60 +278,168 @@ window.DashboardPage = function DashboardPage({
               "div",
               { className: "stat-box" },
               h("div", { className: "stat-label" }, "Feed"),
-              h("div", { className: "stat-value", style: { fontFamily: "var(--font-sans)", fontSize: "13px" } }, activeStock.isLive ? "Live API" : "Demo")
+              h("div", { className: "stat-value", style: { fontFamily: "var(--font-sans)", fontSize: "13px" } }, activeStock.isLive ? "Live API" : "NSE Demo")
             )
           )
         )
       ),
 
-      // Right: Market Watch List
+      // Right Column: Quick Order Ticket + Market Watch
       h(
         "div",
-        { className: "card" },
+        { style: { display: "flex", flexDirection: "column", gap: 16 } },
+        // Quick Order Ticket
         h(
           "div",
-          { className: "card-header" },
-          h("h2", { className: "card-title" }, "Market Watch"),
-          h("span", { className: "text-muted", style: { fontSize: "12px" } }, `${window.TradeLensData.STOCKS.length} symbols`)
-        ),
-        h(
-          "div",
-          null,
-          window.TradeLensData.STOCKS.map((stock) => {
-            const up = stock.change >= 0;
-            const isSelected = stock.symbol === activeStock.symbol;
-            return h(
+          { className: "card" },
+          h(
+            "div",
+            { className: "card-header" },
+            h("h2", { className: "card-title" }, `Trade ${activeStock.symbol}`),
+            h("span", { className: "mono text-muted", style: { fontSize: "12px" } }, `Margin ${window.TradeLensData.formatCurrency(cashBalance, settings.currency)}`)
+          ),
+          h(
+            "form",
+            { className: "card-body form-stack", onSubmit: handleOrderSubmit },
+            h(
               "div",
-              {
-                key: stock.symbol,
-                className: `stock-list-row ${isSelected ? "active" : ""}`,
-                onClick: () => onSelectSymbol(stock.symbol),
-              },
+              { className: "segmented", style: { width: "100%" } },
+              h(
+                "button",
+                {
+                  type: "button",
+                  className: orderSide === "BUY" ? "active" : "",
+                  style: { flex: 1, color: orderSide === "BUY" ? "#15803d" : undefined },
+                  onClick: () => setOrderSide("BUY"),
+                },
+                "BUY"
+              ),
+              h(
+                "button",
+                {
+                  type: "button",
+                  className: orderSide === "SELL" ? "active" : "",
+                  style: { flex: 1, color: orderSide === "SELL" ? "#dc2626" : undefined },
+                  onClick: () => setOrderSide("SELL"),
+                },
+                "SELL"
+              )
+            ),
+            h(
+              "div",
+              { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 } },
               h(
                 "div",
-                null,
-                h("div", { style: { fontWeight: 600 } }, stock.symbol),
-                h("div", { className: "text-muted", style: { fontSize: "12px" } }, stock.name)
+                { className: "field" },
+                h("label", { className: "field-label" }, "Qty"),
+                h("input", {
+                  className: "input mono",
+                  type: "number",
+                  min: 1,
+                  value: orderQty,
+                  onChange: (e) => setOrderQty(e.target.value),
+                })
               ),
               h(
                 "div",
-                { style: { textAlign: "right" } },
+                { className: "field" },
+                h("label", { className: "field-label" }, "Order Type"),
+                h(
+                  "select",
+                  {
+                    className: "select",
+                    value: orderType,
+                    onChange: (e) => setOrderType(e.target.value),
+                  },
+                  h("option", { value: "MARKET" }, "Market"),
+                  h("option", { value: "LIMIT" }, "Limit")
+                )
+              )
+            ),
+            orderType === "LIMIT" &&
+              h(
+                "div",
+                { className: "field" },
+                h("label", { className: "field-label" }, "Limit Price"),
+                h("input", {
+                  className: "input mono",
+                  type: "number",
+                  step: "0.05",
+                  placeholder: String(activeStock.price),
+                  value: limitPrice,
+                  onChange: (e) => setLimitPrice(e.target.value),
+                })
+              ),
+            h(
+              "div",
+              { style: { display: "flex", justifyContent: "space-between", fontSize: "12.5px" } },
+              h("span", { className: "text-muted" }, "Est. Order Value"),
+              h("span", { className: "mono", style: { fontWeight: 600 } }, window.TradeLensData.formatCurrency(estTotal, settings.currency))
+            ),
+            h(
+              "button",
+              {
+                type: "submit",
+                className: "btn",
+                style: {
+                  width: "100%",
+                  backgroundColor: orderSide === "BUY" ? "#15803d" : "#dc2626",
+                  color: "#ffffff",
+                },
+              },
+              `${orderSide} ${activeStock.symbol}`
+            )
+          )
+        ),
+
+        // NSE Market Watch List
+        h(
+          "div",
+          { className: "card" },
+          h(
+            "div",
+            { className: "card-header" },
+            h("h2", { className: "card-title" }, "NSE Market Watch"),
+            h("span", { className: "text-muted", style: { fontSize: "12px" } }, `${window.TradeLensData.STOCKS.length} stocks`)
+          ),
+          h(
+            "div",
+            { style: { maxHeight: 340, overflowY: "auto" } },
+            window.TradeLensData.STOCKS.map((stock) => {
+              const up = stock.change >= 0;
+              const isSelected = stock.symbol === activeStock.symbol;
+              return h(
+                "div",
+                {
+                  key: stock.symbol,
+                  className: `stock-list-row ${isSelected ? "active" : ""}`,
+                  onClick: () => onSelectSymbol(stock.symbol),
+                },
                 h(
                   "div",
-                  { className: "mono", style: { fontWeight: 600, fontSize: "13.5px" } },
-                  window.TradeLensData.formatCurrency(stock.price, settings.currency)
+                  null,
+                  h("div", { style: { fontWeight: 600 } }, stock.symbol),
+                  h("div", { className: "text-muted", style: { fontSize: "12px" } }, stock.name)
                 ),
                 h(
                   "div",
-                  { className: `mono ${up ? "text-gain" : "text-loss"}`, style: { fontSize: "12px" } },
-                  `${up ? "+" : ""}${stock.changePercent.toFixed(2)}%`
+                  { style: { textAlign: "right" } },
+                  h(
+                    "div",
+                    { className: "mono", style: { fontWeight: 600, fontSize: "13.5px" } },
+                    window.TradeLensData.formatCurrency(stock.price, settings.currency)
+                  ),
+                  h(
+                    "div",
+                    { className: `mono ${up ? "text-gain" : "text-loss"}`, style: { fontSize: "12px" } },
+                    `${up ? "+" : ""}${stock.changePercent.toFixed(2)}%`
+                  )
                 )
-              )
-            );
-          })
+              );
+            })
+          )
         )
       )
     )
   );
 };
-

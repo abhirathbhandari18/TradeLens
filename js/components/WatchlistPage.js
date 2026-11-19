@@ -1,11 +1,11 @@
 /**
- * TradeLens — Wishlist Page
- * Manage watched stocks, target prices, notes, and jump to their chart.
+ * TradeLens — Watchlist Page
+ * Manage watched NSE/BSE stocks, target prices, notes, and jump to their chart.
  */
 
-window.WishlistPage = function WishlistPage({
-  wishlist,
-  onUpdateWishlist,
+window.WatchlistPage = function WatchlistPage({
+  watchlist,
+  onUpdateWatchlist,
   onOpenChart,
   settings,
   onShowToast,
@@ -19,29 +19,29 @@ window.WishlistPage = function WishlistPage({
     e.preventDefault();
     const sym = symbolInput.trim().toUpperCase();
     if (!sym) return;
-    if (wishlist.some((item) => item.symbol === sym)) {
-      onShowToast(`${sym} is already in your wishlist.`);
+    if (watchlist.some((item) => item.symbol === sym)) {
+      onShowToast(`${sym} is already in your watchlist.`);
       return;
     }
     const next = [
-      ...wishlist,
+      ...watchlist,
       {
         symbol: sym,
         targetPrice: targetInput.trim() || "—",
         note: noteInput.trim() || "Watching price action",
       },
     ];
-    onUpdateWishlist(next);
+    onUpdateWatchlist(next);
     setSymbolInput("");
     setTargetInput("");
     setNoteInput("");
-    onShowToast(`Added ${sym} to wishlist`);
+    onShowToast(`Added ${sym} to watchlist`);
   }
 
   function handleRemove(sym) {
-    const next = wishlist.filter((item) => item.symbol !== sym);
-    onUpdateWishlist(next);
-    onShowToast(`Removed ${sym} from wishlist`);
+    const next = watchlist.filter((item) => item.symbol !== sym);
+    onUpdateWatchlist(next);
+    onShowToast(`Removed ${sym} from watchlist`);
   }
 
   function MiniSparkline({ symbol, price, isUp }) {
@@ -80,16 +80,16 @@ window.WishlistPage = function WishlistPage({
       h(
         "div",
         null,
-        h("h1", { className: "page-title" }, "Wishlist"),
+        h("h1", { className: "page-title" }, "Watchlist"),
         h(
           "p",
           { className: "page-subtitle" },
-          "Track stocks you are watching and set target entry prices."
+          "Track Indian equities you are monitoring and set target entry prices."
         )
       )
     ),
 
-    // Add to Wishlist Bar
+    // Add to Watchlist Bar
     h(
       "div",
       { className: "card", style: { marginBottom: 20 } },
@@ -102,7 +102,7 @@ window.WishlistPage = function WishlistPage({
             onSubmit: handleAdd,
             style: {
               display: "grid",
-              gridTemplateColumns: "140px 140px 1fr auto",
+              gridTemplateColumns: "150px 150px 1fr auto",
               gap: 12,
               alignItems: "end",
             },
@@ -110,10 +110,10 @@ window.WishlistPage = function WishlistPage({
           h(
             "div",
             { className: "field" },
-            h("label", { className: "field-label" }, "Ticker Symbol"),
+            h("label", { className: "field-label" }, "NSE Symbol"),
             h("input", {
               className: "input",
-              placeholder: "e.g. AAPL",
+              placeholder: "e.g. RELIANCE",
               value: symbolInput,
               onChange: (e) => setSymbolInput(e.target.value),
             })
@@ -121,10 +121,10 @@ window.WishlistPage = function WishlistPage({
           h(
             "div",
             { className: "field" },
-            h("label", { className: "field-label" }, "Target Price"),
+            h("label", { className: "field-label" }, "Target Price (₹)"),
             h("input", {
               className: "input",
-              placeholder: "e.g. 240.00",
+              placeholder: "e.g. 1350.00",
               value: targetInput,
               onChange: (e) => setTargetInput(e.target.value),
             })
@@ -145,21 +145,21 @@ window.WishlistPage = function WishlistPage({
       )
     ),
 
-    // Wishlist Table
+    // Watchlist Table
     h(
       "div",
       { className: "card" },
       h(
         "div",
         { className: "card-header" },
-        h("h2", { className: "card-title" }, "Saved Stocks"),
-        h("span", { className: "text-muted", style: { fontSize: "12.5px" } }, `${wishlist.length} items`)
+        h("h2", { className: "card-title" }, "Watched Stocks"),
+        h("span", { className: "text-muted", style: { fontSize: "12.5px" } }, `${watchlist.length} stocks`)
       ),
-      wishlist.length === 0
+      watchlist.length === 0
         ? h(
             "div",
             { className: "card-body text-muted", style: { textAlign: "center", padding: "36px 18px" } },
-            "Your wishlist is empty. Add a stock ticker above or star one from the Dashboard."
+            "Your watchlist is empty. Add an NSE symbol above or star one from the Dashboard."
           )
         : h(
             "div",
@@ -185,13 +185,13 @@ window.WishlistPage = function WishlistPage({
               h(
                 "tbody",
                 null,
-                wishlist.map((item) => {
+                watchlist.map((item) => {
                   const stock = window.TradeLensData.STOCKS.find((s) => s.symbol === item.symbol) || {
                     symbol: item.symbol,
-                    name: item.symbol + " Equity",
-                    price: 150.0,
-                    change: 0.95,
-                    changePercent: 0.64,
+                    name: item.symbol + " Ltd.",
+                    price: 1000.0,
+                    change: 8.5,
+                    changePercent: 0.86,
                   };
                   const up = stock.change >= 0;
 
@@ -219,7 +219,7 @@ window.WishlistPage = function WishlistPage({
                         `${up ? "+" : ""}${stock.changePercent.toFixed(2)}%`
                       )
                     ),
-                    h("td", { className: "mono" }, item.targetPrice !== "—" ? `$${item.targetPrice}` : "—"),
+                    h("td", { className: "mono" }, item.targetPrice !== "—" ? `₹${item.targetPrice}` : "—"),
                     h("td", { className: "text-muted", style: { maxWidth: 240 } }, item.note || "—"),
                     h(
                       "td",

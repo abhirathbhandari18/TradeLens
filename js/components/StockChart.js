@@ -18,13 +18,20 @@ window.StockChart = function StockChart({
   const width = 760;
   const height = 290;
   const padLeft = 12;
-  const padRight = 62;
+  const padRight = 76;
   const padTop = 16;
   const padBottom = 28;
   const plotW = width - padLeft - padRight;
   const plotH = height - padTop - padBottom;
 
   const safeSeries = series && series.length > 0 ? series : [];
+
+  // Determine whether the graph went up or down over the selected period
+  const firstClose = safeSeries.length > 0 ? safeSeries[0].close : 0;
+  const lastClose = safeSeries.length > 0 ? safeSeries[safeSeries.length - 1].close : 0;
+  const periodChange = lastClose - firstClose;
+  const periodChangePct = firstClose > 0 ? (periodChange / firstClose) * 100 : 0;
+  const periodIsUp = safeSeries.length > 0 ? periodChange >= 0 : !!isPositive;
 
   let minVal = Infinity;
   let maxVal = -Infinity;
@@ -49,7 +56,7 @@ window.StockChart = function StockChart({
     padTop + ((maxVal - val) / (maxVal - minVal)) * plotH;
 
   const strokeColor = isPositive ? "#15803d" : "#dc2626";
-  const areaFill = isPositive ? "rgba(21, 128, 61, 0.08)" : "rgba(220, 38, 38, 0.08)";
+  const areaFill = isPositive ? "rgba(21, 128, 61, 0.10)" : "rgba(220, 38, 38, 0.10)";
 
   const linePath = safeSeries
     .map((pt, i) => `${i === 0 ? "M" : "L"} ${xFor(i).toFixed(1)} ${yFor(pt.close).toFixed(1)}`)
@@ -140,18 +147,6 @@ window.StockChart = function StockChart({
     h(
       "div",
       { className: "chart-wrapper" },
-      activePoint &&
-        h(
-          "div",
-          { className: "chart-tooltip-bar mono" },
-          h("span", { style: { fontWeight: 600, color: "#0f172a" } }, activePoint.label),
-          h(
-            "span",
-            null,
-            `O ${window.TradeLensData.formatCurrency(activePoint.open, currency)}  ·  H ${window.TradeLensData.formatCurrency(activePoint.high, currency)}  ·  L ${window.TradeLensData.formatCurrency(activePoint.low, currency)}  ·  C ${window.TradeLensData.formatCurrency(activePoint.close, currency)}`
-          ),
-          h("span", { className: "text-muted" }, `Vol ${window.TradeLensData.formatCompactVolume(activePoint.volume)}`)
-        ),
       h(
         "svg",
         {
@@ -279,7 +274,19 @@ window.StockChart = function StockChart({
               strokeWidth: 2,
             })
           )
-      )
+      ),
+      activePoint &&
+        h(
+          "div",
+          { className: "chart-tooltip-bar mono", style: { marginTop: 8, marginBottom: 4 } },
+          h("span", { style: { fontWeight: 600, color: "#0f172a" } }, activePoint.label),
+          h(
+            "span",
+            null,
+            `O ${window.TradeLensData.formatCurrency(activePoint.open, currency)}  ·  H ${window.TradeLensData.formatCurrency(activePoint.high, currency)}  ·  L ${window.TradeLensData.formatCurrency(activePoint.low, currency)}  ·  C ${window.TradeLensData.formatCurrency(activePoint.close, currency)}`
+          ),
+          h("span", { className: "text-muted" }, `Vol ${window.TradeLensData.formatCompactVolume(activePoint.volume)}`)
+        )
     )
   );
 };
