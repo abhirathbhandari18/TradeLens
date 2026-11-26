@@ -133,8 +133,21 @@ public final class JsonUtil {
     private static String userToJson(User u) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("id", u.getId());
+        m.put("tradeId", u.getTradeId());
+        m.put("name", u.getName());
         m.put("username", u.getUsername());
         m.put("email", u.getEmail());
+        m.put("panCard", u.getPanCard());
+        m.put("phone", u.getPhone());
+        m.put("dob", u.getDob() != null ? u.getDob().toString() : "");
+        m.put("kycStatus", u.getKycStatus());
+        m.put("tradingStyle", u.getTradingStyle());
+        m.put("bankName", u.getBankName());
+        m.put("accountNumber", u.getAccountNumber());
+        m.put("ifscCode", u.getIfscCode());
+        m.put("accountType", u.getAccountType());
+        m.put("dematId", u.getDematId());
+        m.put("cashBalance", u.getCashBalance());
         m.put("walletBalance", u.getWalletBalance());
         return mapToJson(m);
     }

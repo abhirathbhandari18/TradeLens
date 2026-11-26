@@ -47,15 +47,14 @@ public class HttpServerApp {
         newServer.createContext("/api/watchlist", new WatchlistHandler());
         newServer.createContext("/api/orders", new OrdersHandler());
         newServer.createContext("/api/holdings", new OrdersHandler());
-
-        JavaLabHandler labHandler = new JavaLabHandler();
-        newServer.createContext("/api/lab", labHandler);
-        newServer.createContext("/api/export", labHandler);
-
         newServer.createContext("/api/stocks", new StockHandler(marketDataStore));
         newServer.createContext("/api/auth", new AuthHandler());
         orderMatcher = new OrderMatcherThread(marketDataStore);
-        newServer.createContext("/api/trade", new TradeHandler(marketDataStore, orderMatcher));
+        TradeHandler tradeHandler = new TradeHandler(marketDataStore, orderMatcher);
+        newServer.createContext("/api/trade", tradeHandler);
+        newServer.createContext("/api/buy", tradeHandler);
+        newServer.createContext("/api/sell", tradeHandler);
+        newServer.createContext("/api/portfolio", new PortfolioHandler());
         newServer.createContext("/api/account", new AccountHandler());
 
         newServer.createContext("/api/health", this::handleHealthCheck);
