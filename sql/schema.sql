@@ -95,3 +95,21 @@ VALUES
 ('NTPC', 'NTPC Ltd', 'NSE', 350.00),
 ('ONGC', 'Oil and Natural Gas Corporation Ltd', 'NSE', 250.00),
 ('POWERGRID', 'Power Grid Corporation of India Ltd', 'NSE', 300.00);
+
+
+-- =========================================
+-- DEMO USER FOR ACCOUNT API TESTING
+-- Dummy details only; not a real account
+-- =========================================
+
+INSERT IGNORE INTO users
+(id, trade_id, name, email, password_hash, pan_card, phone,
+ dob, kyc_status, trading_style, bank_name, account_number,
+ ifsc_code, account_type, demat_id, cash_balance)
+VALUES
+(1, 'TL-DEMO-001', 'Demo User', 'demo@tradelens.test',
+ 'DEMO_ONLY_NOT_A_REAL_PASSWORD_HASH',
+ 'DEMO00000D', '9999999999',
+ '2000-01-01', 'VERIFIED', 'LONG_TERM',
+ 'Demo Bank', 'DEMO12345678',
+ 'DEMO0000001', 'SAVINGS', 'DEMO-DEMAT-001', 100000.00);

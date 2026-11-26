@@ -114,33 +114,47 @@ window.TradeLensAPI = (() => {
     };
   }
 
+
   // ---------------- Auth & Account ----------------
+
   function getSession() {
     return readJSON(KEYS.SESSION, null);
   }
 
   function login(email, password) {
-    // TODO (Java + MySQL): POST `${settings.backendUrl}/auth/login`
+    // Demo authentication still uses localStorage.
     const users = readJSON(KEYS.USERS, []);
+
     const found = users.find(
-      (u) => u.email.toLowerCase() === email.trim().toLowerCase() && u.password === password
+      (u) =>
+        u.email.toLowerCase() === email.trim().toLowerCase() &&
+        u.password === password
     );
+
     if (!found) {
       throw new Error("Invalid email or password.");
     }
+
     const sessionUser = buildSessionUser(found);
     writeJSON(KEYS.SESSION, sessionUser);
+
     return sessionUser;
   }
 
   function signup({ name, email, password, tradingStyle, panCard }) {
-    // TODO (Java + MySQL): POST `${settings.backendUrl}/auth/signup`
+    // Demo signup still uses localStorage.
     const users = readJSON(KEYS.USERS, []);
-    const exists = users.some((u) => u.email.toLowerCase() === email.trim().toLowerCase());
+
+    const exists = users.some(
+      (u) => u.email.toLowerCase() === email.trim().toLowerCase()
+    );
+
     if (exists) {
       throw new Error("An account with this email already exists.");
     }
+
     const nowId = Date.now();
+
     const newUser = {
       id: "USR-" + String(nowId).slice(-6),
       tradeId: "TL-" + String(Math.floor(100000 + (nowId % 900000))),
@@ -159,6 +173,7 @@ window.TradeLensAPI = (() => {
       accountType: "Savings",
       dematId: "1208160048291042",
     };
+
     users.push(newUser);
     writeJSON(KEYS.USERS, users);
 
@@ -168,12 +183,15 @@ window.TradeLensAPI = (() => {
     if (!localStorage.getItem(KEYS.WATCHLIST)) {
       writeJSON(KEYS.WATCHLIST, DEFAULT_WATCHLIST);
     }
+
     if (!localStorage.getItem(KEYS.HOLDINGS)) {
       writeJSON(KEYS.HOLDINGS, DEFAULT_HOLDINGS);
     }
+
     if (!localStorage.getItem(KEYS.ORDERS)) {
       writeJSON(KEYS.ORDERS, DEFAULT_ORDERS);
     }
+
     if (!localStorage.getItem(KEYS.CASH)) {
       writeJSON(KEYS.CASH, DEFAULT_CASH);
     }
@@ -185,22 +203,96 @@ window.TradeLensAPI = (() => {
     localStorage.removeItem(KEYS.SESSION);
   }
 
-  function updateAccount(updates) {
-    // TODO (Java + MySQL): PUT `${settings.backendUrl}/account`
+  // GET: Load account details from Java backend
+  async function getAccount() {
     const session = getSession();
-    if (!session) throw new Error("Not authenticated.");
 
-    const users = readJSON(KEYS.USERS, []);
-    const idx = users.findIndex((u) => u.id === session.id);
-    if (idx !== -1) {
-      users[idx] = { ...users[idx], ...updates };
-      writeJSON(KEYS.USERS, users);
+    if (!session) {
+      throw new Error("Not authenticated.");
     }
 
-    const updatedSession = buildSessionUser({ ...session, ...updates });
+    const settings = getSettings();
+    const url = `${settings.backendUrl.replace(/\/+$/, "")}/account`;
+
+    let response;
+
+    try {
+      response = await fetch(url, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+        },
+      });
+    } catch (error) {
+      throw new Error(
+        "Cannot connect to Java backend. Make sure TradeLensServer is running."
+      );
+    }
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Unable to load account details.");
+    }
+
+    // Keep the current frontend session, but update its account details.
+    const updatedSession = buildSessionUser({
+      ...session,
+      ...data,
+    });
+
     writeJSON(KEYS.SESSION, updatedSession);
+
     return updatedSession;
   }
+
+  // PUT: Save account details to Java/MySQL
+  async function updateAccount(updates) {
+    const session = getSession();
+
+    if (!session) {
+      throw new Error("Not authenticated.");
+    }
+
+    const settings = getSettings();
+    const url = `${settings.backendUrl.replace(/\/+$/, "")}/account`;
+
+    let response;
+
+    try {
+      response = await fetch(url, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(updates),
+      });
+    } catch (error) {
+      throw new Error(
+        "Cannot connect to Java backend. Check whether the server is running."
+      );
+    }
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Unable to update account.");
+    }
+
+    // The Java handler returns the updated account record.
+    const accountData = data;
+
+    const updatedSession = buildSessionUser({
+      ...session,
+      ...accountData,
+    });
+
+    writeJSON(KEYS.SESSION, updatedSession);
+
+    return updatedSession;
+  }
+
 
   // ---------------- Watchlist ----------------
   function getWatchlist() {
@@ -422,6 +514,7 @@ window.TradeLensAPI = (() => {
     login,
     signup,
     logout,
+    getAccount,
     updateAccount,
     getWatchlist,
     saveWatchlist,
