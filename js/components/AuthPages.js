@@ -79,7 +79,7 @@ window.AuthPages = (() => {
     const [password, setPassword] = React.useState("");
     const [error, setError] = React.useState("");
 
-    function handleSubmit(e) {
+    async function handleSubmit(e) {
       e.preventDefault();
       setError("");
       if (!email.trim() || !password) {
@@ -87,26 +87,31 @@ window.AuthPages = (() => {
         return;
       }
       try {
-        const user = window.TradeLensAPI.login(email, password);
+        const user = await window.TradeLensAPI.login(email, password);
         onSuccess(user);
       } catch (err) {
         setError(err.message);
       }
     }
 
-    function handleDemoLogin() {
+    async function handleDemoLogin() {
+      setError("");
       try {
-        const user = window.TradeLensAPI.login("demo@tradelens.in", "demo1234");
+        const user = await window.TradeLensAPI.login("demo@tradelens.in", "demo1234");
         onSuccess(user);
       } catch {
-        const user = window.TradeLensAPI.signup({
-          name: "Abhirath Bhandari",
-          email: "demo@tradelens.in",
-          password: "demo1234",
-          tradingStyle: "Swing Trader",
-          panCard: "ABCDE1234F",
-        });
-        onSuccess(user);
+        try {
+          const user = await window.TradeLensAPI.signup({
+            name: "Abhirath Bhandari",
+            email: "demo@tradelens.in",
+            password: "demo1234",
+            tradingStyle: "Swing Trader",
+            panCard: "ABCDE1234F",
+          });
+          onSuccess(user);
+        } catch (err) {
+          setError(err.message || "Could not reach Java server at http://localhost:8080.");
+        }
       }
     }
 
@@ -183,7 +188,7 @@ window.AuthPages = (() => {
     const [tradingStyle, setTradingStyle] = React.useState("Swing Trader");
     const [error, setError] = React.useState("");
 
-    function handleSubmit(e) {
+    async function handleSubmit(e) {
       e.preventDefault();
       setError("");
       if (!name.trim() || !email.trim() || password.length < 6) {
@@ -191,7 +196,7 @@ window.AuthPages = (() => {
         return;
       }
       try {
-        const user = window.TradeLensAPI.signup({
+        const user = await window.TradeLensAPI.signup({
           name,
           email,
           password,

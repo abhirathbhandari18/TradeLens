@@ -10,10 +10,10 @@
     const [authView, setAuthView] = React.useState("login"); // "login" | "signup"
     const [activePage, setActivePage] = React.useState("dashboard");
     const [selectedSymbol, setSelectedSymbol] = React.useState("RELIANCE");
-    const [watchlist, setWatchlist] = React.useState(() => window.TradeLensAPI.getWatchlist());
-    const [holdings, setHoldings] = React.useState(() => window.TradeLensAPI.getHoldings());
-    const [orders, setOrders] = React.useState(() => window.TradeLensAPI.getOrders());
-    const [cashBalance, setCashBalance] = React.useState(() => window.TradeLensAPI.getCashBalance());
+    const [watchlist, setWatchlist] = React.useState([]);
+    const [holdings, setHoldings] = React.useState([]);
+    const [orders, setOrders] = React.useState([]);
+    const [cashBalance, setCashBalance] = React.useState(145000);
     const [settings, setSettings] = React.useState(() => window.TradeLensAPI.getSettings());
     const [searchQuery, setSearchQuery] = React.useState("");
     const [toast, setToast] = React.useState("");
@@ -24,50 +24,71 @@
       window.__tlToastTimer = window.setTimeout(() => setToast(""), 2800);
     }
 
-    function handleAuthSuccess(loggedInUser) {
+    const syncUserData = React.useCallback(async () => {
+      try {
+        const [portfolio, wl] = await Promise.all([
+          window.TradeLensAPI.getPortfolio(),
+          window.TradeLensAPI.getWatchlist(),
+        ]);
+        setCashBalance(portfolio.cash ?? 145000);
+        setHoldings(portfolio.holdings || []);
+        setOrders(portfolio.orders || []);
+        setWatchlist(wl || []);
+      } catch {
+        // Ignore if session expired or backend not running yet
+      }
+    }, []);
+
+    React.useEffect(() => {
+      if (user) {
+        syncUserData();
+      }
+    }, [user, syncUserData]);
+
+    async function handleAuthSuccess(loggedInUser) {
       setUser(loggedInUser);
-      setWatchlist(window.TradeLensAPI.getWatchlist());
-      setHoldings(window.TradeLensAPI.getHoldings());
-      setOrders(window.TradeLensAPI.getOrders());
-      setCashBalance(window.TradeLensAPI.getCashBalance());
+      await syncUserData();
       setActivePage("dashboard");
       showToast(`Welcome back, ${loggedInUser.name}`);
     }
 
-    function handleLogout() {
-      window.TradeLensAPI.logout();
+    async function handleLogout() {
+      await window.TradeLensAPI.logout();
       setUser(null);
+      setHoldings([]);
+      setOrders([]);
+      setWatchlist([]);
       setAuthView("login");
     }
 
-    function handleToggleWatchlist(symbol) {
+    async function handleToggleWatchlist(symbol) {
       const exists = watchlist.some((w) => w.symbol === symbol);
       const next = exists
         ? watchlist.filter((w) => w.symbol !== symbol)
         : [...watchlist, { symbol, targetPrice: "—", note: "Added from Dashboard" }];
-      setWatchlist(window.TradeLensAPI.saveWatchlist(next));
+      setWatchlist(await window.TradeLensAPI.saveWatchlist(next));
       showToast(exists ? `Removed ${symbol} from watchlist` : `Added ${symbol} to watchlist`);
     }
 
-    function handleUpdateWatchlist(nextList) {
-      setWatchlist(window.TradeLensAPI.saveWatchlist(nextList));
+    async function handleUpdateWatchlist(nextList) {
+      setWatchlist(await window.TradeLensAPI.saveWatchlist(nextList));
     }
 
-    function handlePlaceOrder(orderInput) {
+    async function handlePlaceOrder(orderInput) {
       try {
-        const res = window.TradeLensAPI.placeOrder(orderInput);
+        const res = await window.TradeLensAPI.placeOrder(orderInput);
         setCashBalance(res.cash);
-        setHoldings(res.holdings);
-        setOrders(res.orders);
-        showToast(`${res.order.side} ${res.order.qty} ${res.order.symbol} executed`);
+        setHoldings(res.holdings || []);
+        setOrders(res.orders || []);
+        showToast(`${res.order.side} ${res.order.qty} ${res.order.symbol} (${res.order.status})`);
       } catch (err) {
         showToast(err.message);
       }
     }
 
-    function handleAddFunds(amount) {
+    async function handleAddFunds(amount) {
       try {
-        const nextCash = window.TradeLensAPI.addFunds(amount);
+        const nextCash = await window.TradeLensAPI.addFunds(amount);
         setCashBalance(nextCash);
         showToast(`Added ${window.TradeLensData.formatCurrency(amount, settings.currency)} to margin`);
       } catch (err) {

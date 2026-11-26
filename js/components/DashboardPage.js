@@ -36,6 +36,19 @@ window.DashboardPage = function DashboardPage({
 
   React.useEffect(() => {
     loadQuote(selectedSymbol);
+
+    // Poll Java backend every 1.8 seconds for fresh live stock prices
+    const pollId = window.setInterval(async () => {
+      try {
+        await window.TradeLensAPI.fetchAllStocks();
+        const fresh = await window.TradeLensAPI.fetchLiveQuote(selectedSymbol);
+        setQuote(fresh);
+      } catch {
+        // Keep last displayed quote if backend is temporarily unreachable
+      }
+    }, 1800);
+
+    return () => window.clearInterval(pollId);
   }, [selectedSymbol, settings.apiKey, settings.provider, loadQuote]);
 
   const activeStock =

@@ -34,13 +34,13 @@ window.AccountPage = function AccountPage({
     settings.backendUrl || "http://localhost:8080/api"
   );
 
-  function handleProfileSave(e) {
+  async function handleProfileSave(e) {
     e.preventDefault();
     if (!name.trim() || !email.trim()) {
       onShowToast("Name and email cannot be empty.");
       return;
     }
-    const updated = window.TradeLensAPI.updateAccount({
+    const updated = await window.TradeLensAPI.updateAccount({
       name: name.trim(),
       email: email.trim(),
       phone: phone.trim(),
@@ -52,13 +52,13 @@ window.AccountPage = function AccountPage({
     onShowToast("Profile & KYC details updated");
   }
 
-  function handleBankSave(e) {
+  async function handleBankSave(e) {
     e.preventDefault();
     if (!bankName.trim() || !accountNumber.trim() || !ifscCode.trim()) {
       onShowToast("Please fill in bank name, account number, and IFSC code.");
       return;
     }
-    const updated = window.TradeLensAPI.updateAccount({
+    const updated = await window.TradeLensAPI.updateAccount({
       bankName: bankName.trim(),
       accountNumber: accountNumber.trim(),
       ifscCode: ifscCode.trim().toUpperCase(),
