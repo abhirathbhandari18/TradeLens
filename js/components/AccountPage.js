@@ -1,7 +1,8 @@
+
 /**
  * TradeLens — Account & Profile Page
- * Personal KYC details (Name, ID, PAN Card, Phone, DOB), Bank & Demat details,
- * and Java/MySQL integration config.
+ * Personal KYC details, Bank & Demat details,
+ * and Java/MySQL integration.
  */
 
 window.AccountPage = function AccountPage({
@@ -17,17 +18,23 @@ window.AccountPage = function AccountPage({
   // Profile & KYC state
   const [name, setName] = React.useState(user.name || "");
   const [email, setEmail] = React.useState(user.email || "");
-  const [phone, setPhone] = React.useState(user.phone || "+91 98765 43210");
-  const [panCard, setPanCard] = React.useState(user.panCard || "ABCDE1234F");
-  const [dob, setDob] = React.useState(user.dob || "2000-01-15");
-  const [tradingStyle, setTradingStyle] = React.useState(user.tradingStyle || "Swing Trader");
+  const [phone, setPhone] = React.useState(user.phone || "");
+  const [panCard, setPanCard] = React.useState(user.panCard || "");
+  const [dob, setDob] = React.useState(user.dob || "");
+  const [tradingStyle, setTradingStyle] = React.useState(
+    user.tradingStyle || "Swing Trader"
+  );
 
   // Bank & Demat state
-  const [bankName, setBankName] = React.useState(user.bankName || "HDFC Bank");
-  const [accountNumber, setAccountNumber] = React.useState(user.accountNumber || "50100482910482");
-  const [ifscCode, setIfscCode] = React.useState(user.ifscCode || "HDFC0001245");
-  const [accountType, setAccountType] = React.useState(user.accountType || "Savings");
-  const [dematId, setDematId] = React.useState(user.dematId || "1208160048291042");
+  const [bankName, setBankName] = React.useState(user.bankName || "");
+  const [accountNumber, setAccountNumber] = React.useState(
+    user.accountNumber || ""
+  );
+  const [ifscCode, setIfscCode] = React.useState(user.ifscCode || "");
+  const [accountType, setAccountType] = React.useState(
+    user.accountType || "Savings"
+  );
+  const [dematId, setDematId] = React.useState(user.dematId || "");
 
   // Backend URL state
   const [backendUrl, setBackendUrl] = React.useState(
@@ -36,6 +43,7 @@ window.AccountPage = function AccountPage({
 
   async function handleProfileSave(e) {
     e.preventDefault();
+
     if (!name.trim() || !email.trim()) {
       onShowToast("Name and email cannot be empty.");
       return;
@@ -54,6 +62,7 @@ window.AccountPage = function AccountPage({
 
   async function handleBankSave(e) {
     e.preventDefault();
+
     if (!bankName.trim() || !accountNumber.trim() || !ifscCode.trim()) {
       onShowToast("Please fill in bank name, account number, and IFSC code.");
       return;
@@ -71,13 +80,19 @@ window.AccountPage = function AccountPage({
 
   function handleBackendSave(e) {
     e.preventDefault();
-    onSaveSettings({ ...settings, backendUrl: backendUrl.trim() });
-    onShowToast("Java backend URL saved");
+
+    onSaveSettings({
+      ...settings,
+      backendUrl: backendUrl.trim(),
+    });
+
+    onShowToast("Java backend URL saved.");
   }
 
   return h(
     "div",
     null,
+
     h(
       "div",
       { className: "page-header" },
@@ -98,10 +113,15 @@ window.AccountPage = function AccountPage({
       )
     ),
 
+    loading
+      ? h("div", { className: "card card-body" }, "Loading account from Java backend...")
+      : null,
+
     // Quick Identity Strip
     h(
       "div",
       { className: "ticker-strip" },
+
       h(
         "div",
         { className: "card" },
@@ -112,6 +132,7 @@ window.AccountPage = function AccountPage({
           h("div", { className: "stat-value" }, user.id || "USR-0001")
         )
       ),
+
       h(
         "div",
         { className: "card" },
@@ -122,6 +143,7 @@ window.AccountPage = function AccountPage({
           h("div", { className: "stat-value" }, user.tradeId || "TL-849201")
         )
       ),
+
       h(
         "div",
         { className: "card" },
@@ -129,9 +151,10 @@ window.AccountPage = function AccountPage({
           "div",
           { className: "card-body" },
           h("div", { className: "stat-label" }, "PAN Card"),
-          h("div", { className: "stat-value" }, user.panCard || "ABCDE1234F")
+          h("div", { className: "stat-value" }, user.panCard || "Not added")
         )
       ),
+
       h(
         "div",
         { className: "card" },
@@ -142,7 +165,7 @@ window.AccountPage = function AccountPage({
           h(
             "span",
             { className: "pill-badge pill-gain", style: { marginTop: 2 } },
-            user.kycStatus || "Verified"
+            user.kycStatus || "Pending"
           )
         )
       )
@@ -151,7 +174,8 @@ window.AccountPage = function AccountPage({
     h(
       "div",
       { className: "settings-grid" },
-      // Card 1: Personal & KYC Profile
+
+      // Personal & KYC Profile
       h(
         "div",
         { className: "card" },
@@ -159,14 +183,21 @@ window.AccountPage = function AccountPage({
           "div",
           { className: "card-header" },
           h("h2", { className: "card-title" }, "Personal & KYC Profile"),
-          h("span", { className: "text-muted", style: { fontSize: "12px" } }, `Joined ${user.joinedAt || "2026"}`)
+          h(
+            "span",
+            { className: "text-muted", style: { fontSize: "12px" } },
+            `Joined ${user.joinedAt || "2026"}`
+          )
         ),
+
         h(
           "form",
           { className: "card-body form-stack", onSubmit: handleProfileSave },
+
           h(
             "div",
             { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 } },
+
             h(
               "div",
               { className: "field" },
@@ -177,6 +208,7 @@ window.AccountPage = function AccountPage({
                 onChange: (e) => setName(e.target.value),
               })
             ),
+
             h(
               "div",
               { className: "field" },
@@ -189,9 +221,11 @@ window.AccountPage = function AccountPage({
               })
             )
           ),
+
           h(
             "div",
             { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 } },
+
             h(
               "div",
               { className: "field" },
@@ -203,6 +237,7 @@ window.AccountPage = function AccountPage({
                 onChange: (e) => setEmail(e.target.value),
               })
             ),
+
             h(
               "div",
               { className: "field" },
@@ -214,9 +249,11 @@ window.AccountPage = function AccountPage({
               })
             )
           ),
+
           h(
             "div",
             { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 } },
+
             h(
               "div",
               { className: "field" },
@@ -228,6 +265,7 @@ window.AccountPage = function AccountPage({
                 onChange: (e) => setDob(e.target.value),
               })
             ),
+
             h(
               "div",
               { className: "field" },
@@ -246,15 +284,24 @@ window.AccountPage = function AccountPage({
               )
             )
           ),
+
           h(
             "div",
             null,
-            h("button", { type: "submit", className: "btn btn-primary" }, "Save Profile")
+            h(
+              "button",
+              {
+                type: "submit",
+                className: "btn btn-primary",
+                disabled: savingProfile || loading,
+              },
+              savingProfile ? "Saving..." : "Save Profile"
+            )
           )
         )
       ),
 
-      // Card 2: Bank & Demat Details
+      // Bank & Demat Details
       h(
         "div",
         { className: "card" },
@@ -264,12 +311,15 @@ window.AccountPage = function AccountPage({
           h("h2", { className: "card-title" }, "Bank & Demat Details"),
           h("span", { className: "pill-badge pill-gain" }, "Primary Bank")
         ),
+
         h(
           "form",
           { className: "card-body form-stack", onSubmit: handleBankSave },
+
           h(
             "div",
             { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 } },
+
             h(
               "div",
               { className: "field" },
@@ -281,6 +331,7 @@ window.AccountPage = function AccountPage({
                 onChange: (e) => setBankName(e.target.value),
               })
             ),
+
             h(
               "div",
               { className: "field" },
@@ -297,9 +348,11 @@ window.AccountPage = function AccountPage({
               )
             )
           ),
+
           h(
             "div",
             { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 } },
+
             h(
               "div",
               { className: "field" },
@@ -310,6 +363,7 @@ window.AccountPage = function AccountPage({
                 onChange: (e) => setAccountNumber(e.target.value),
               })
             ),
+
             h(
               "div",
               { className: "field" },
@@ -322,9 +376,11 @@ window.AccountPage = function AccountPage({
               })
             )
           ),
+
           h(
             "div",
             { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 } },
+
             h(
               "div",
               { className: "field" },
@@ -335,6 +391,7 @@ window.AccountPage = function AccountPage({
                 disabled: true,
               })
             ),
+
             h(
               "div",
               { className: "field" },
@@ -346,32 +403,49 @@ window.AccountPage = function AccountPage({
               })
             )
           ),
+
           h(
             "div",
             null,
-            h("button", { type: "submit", className: "btn btn-primary" }, "Save Bank Details")
+            h(
+              "button",
+              {
+                type: "submit",
+                className: "btn btn-primary",
+                disabled: savingBank || loading,
+              },
+              savingBank ? "Saving..." : "Save Bank Details"
+            )
           )
         )
       )
     ),
 
-    // Card 3: Java & MySQL Integration
+    // Java & MySQL Integration
     h(
       "div",
       { className: "card", style: { marginTop: 20 } },
+
       h(
         "div",
         { className: "card-header" },
         h("h2", { className: "card-title" }, "Java & MySQL Integration"),
-        h("span", { className: "pill-badge pill-neutral" }, "Frontend Only")
+        h("span", { className: "pill-badge pill-neutral" }, "Java API Configured")
       ),
+
       h(
         "form",
         {
           className: "card-body",
           onSubmit: handleBackendSave,
-          style: { display: "flex", gap: 12, alignItems: "flex-end", flexWrap: "wrap" },
+          style: {
+            display: "flex",
+            gap: 12,
+            alignItems: "flex-end",
+            flexWrap: "wrap",
+          },
         },
+
         h(
           "div",
           { className: "field", style: { flex: 1, minWidth: 260 } },
@@ -384,10 +458,15 @@ window.AccountPage = function AccountPage({
           h(
             "span",
             { className: "field-hint" },
-            "MySQL tables: users (with PAN & bank details), watchlist, holdings, orders, user_settings"
+            "Account data is loaded and saved through the Java REST API."
           )
         ),
-        h("button", { type: "submit", className: "btn btn-secondary" }, "Save Endpoint URL")
+
+        h(
+          "button",
+          { type: "submit", className: "btn btn-secondary" },
+          "Save Endpoint URL"
+        )
       )
     )
   );

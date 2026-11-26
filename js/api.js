@@ -236,6 +236,7 @@ window.TradeLensAPI = (() => {
     login,
     signup,
     logout,
+    getAccount,
     updateAccount,
     getPortfolio,
     addFunds,
