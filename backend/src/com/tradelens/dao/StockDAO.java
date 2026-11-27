@@ -99,6 +99,25 @@ public class StockDAO {
     }
 
     /**
+     * Persists live market prices (current_price, day_high, day_low) back into Aiven MySQL stocks table.
+     */
+    public void updateStockPricesBatch(Collection<Stock> stocks) throws SQLException {
+        if (stocks == null || stocks.isEmpty()) return;
+        String sql = "UPDATE stocks SET current_price = ?, day_high = ?, day_low = ? WHERE symbol = ?";
+        try (Connection con = DBConnectionManager.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            for (Stock s : stocks) {
+                ps.setBigDecimal(1, s.getCurrentPrice());
+                ps.setBigDecimal(2, s.getDayHigh());
+                ps.setBigDecimal(3, s.getDayLow());
+                ps.setString(4, s.getSymbol());
+                ps.addBatch();
+            }
+            ps.executeBatch();
+        }
+    }
+
+    /**
      * Helper method to convert a ResultSet cursor row into a clean Stock model instance.
      */
     private Stock mapResultSetToStock(ResultSet rs) throws SQLException {

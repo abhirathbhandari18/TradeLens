@@ -23,6 +23,7 @@ public class DBConnectionManager {
     private static String url = DEFAULT_URL;
     private static String user = DEFAULT_USER;
     private static String password = DEFAULT_PASSWORD;
+    private static final Properties FILE_PROPS = new Properties();
 
     static {
         try {
@@ -41,6 +42,7 @@ public class DBConnectionManager {
             try (FileInputStream fis = new FileInputStream(propFile)) {
                 Properties props = new Properties();
                 props.load(fis);
+                FILE_PROPS.putAll(props);
                 if (props.getProperty("db.url") != null) url = props.getProperty("db.url").trim();
                 if (props.getProperty("db.user") != null) user = props.getProperty("db.user").trim();
                 if (props.getProperty("db.password") != null) password = props.getProperty("db.password").trim();
@@ -66,6 +68,19 @@ public class DBConnectionManager {
      */
     public static Connection getConnection() throws SQLException {
         return DriverManager.getConnection(url, user, password);
+    }
+
+    /**
+     * Reads a configuration property from environment variables or local db.properties.
+     */
+    public static String getProperty(String key, String defaultValue) {
+        String envKey = key.toUpperCase().replace('.', '_');
+        String envVal = System.getenv(envKey);
+        if (envVal != null && !envVal.trim().isEmpty()) {
+            return envVal.trim();
+        }
+        String fileVal = FILE_PROPS.getProperty(key);
+        return (fileVal != null && !fileVal.trim().isEmpty()) ? fileVal.trim() : defaultValue;
     }
 
     /**

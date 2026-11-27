@@ -18,8 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * TradeLens AuthHandler — Handles POST /api/auth/signup, /api/auth/login, /api/auth/logout.
- * Uses Divyansh's UserDAO (MySQL) and SessionManager (HashMap<String, Integer> tokens).
+ * Handles signup, login, and logout using UserDAO and SessionManager.
  */
 public class AuthHandler implements HttpHandler {
 

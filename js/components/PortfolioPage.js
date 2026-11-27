@@ -15,6 +15,26 @@ window.PortfolioPage = function PortfolioPage({
 }) {
   const h = React.createElement;
   const [fundInput, setFundInput] = React.useState("");
+  const [, setTick] = React.useState(0);
+
+  // Auto-refresh live prices, Day's P&L, and Portfolio Valuation every 1.8 seconds
+  React.useEffect(() => {
+    let active = true;
+    const refreshAll = async () => {
+      try {
+        await window.TradeLensAPI.fetchAllStocks();
+        if (active) setTick((t) => t + 1);
+      } catch {
+        // Keep current prices if fetch fails
+      }
+    };
+    refreshAll();
+    const pollId = window.setInterval(refreshAll, 1800);
+    return () => {
+      active = false;
+      window.clearInterval(pollId);
+    };
+  }, []);
 
   const enriched = holdings.map((item) => {
     const stock = window.TradeLensData.STOCKS.find((s) => s.symbol === item.symbol) || {

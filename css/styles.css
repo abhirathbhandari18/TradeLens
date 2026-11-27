@@ -1,6 +1,4 @@
-/* =========================================================
-   TradeLens — Bright Editorial Fintech Design System
-   ========================================================= */
+/* TradeLens light theme */
 
 :root {
   --bg-canvas: #f6f8fa;
@@ -83,9 +81,7 @@ textarea {
   color: var(--text-muted);
 }
 
-/* =========================================================
-   Buttons & Inputs
-   ========================================================= */
+/* Buttons & Inputs */
 
 .btn {
   display: inline-flex;
@@ -215,9 +211,7 @@ textarea {
   color: var(--text-secondary);
 }
 
-/* =========================================================
-   Auth Pages (Login & Signup)
-   ========================================================= */
+/* Auth Pages (Login & Signup) */
 
 .auth-shell {
   min-height: 100vh;
@@ -353,9 +347,7 @@ textarea {
   padding: 0;
 }
 
-/* =========================================================
-   App Shell (Topbar + Sidebar + Main)
-   ========================================================= */
+/* App Shell (Topbar, Sidebar, Main) */
 
 .app-shell {
   min-height: 100vh;
@@ -570,9 +562,7 @@ textarea {
   margin: 0 auto;
 }
 
-/* =========================================================
-   Cards & Page Headers
-   ========================================================= */
+/* Cards & Page Headers */
 
 .page-header {
   display: flex;
@@ -621,9 +611,7 @@ textarea {
   padding: 18px;
 }
 
-/* =========================================================
-   Dashboard Layout
-   ========================================================= */
+/* Dashboard Layout */
 
 .ticker-strip {
   display: grid;
@@ -830,9 +818,7 @@ textarea {
   background-color: var(--accent-soft);
 }
 
-/* =========================================================
-   Tables (Wishlist)
-   ========================================================= */
+/* Tables */
 
 .table-wrap {
   width: 100%;
@@ -870,9 +856,7 @@ textarea {
   background-color: var(--bg-hover);
 }
 
-/* =========================================================
-   Settings & Account Forms
-   ========================================================= */
+/* Settings & Account Forms */
 
 .settings-grid {
   display: grid;
@@ -942,9 +926,7 @@ textarea {
   transform: translateX(18px);
 }
 
-/* =========================================================
-   Toast Notification
-   ========================================================= */
+/* Toast */
 
 .toast {
   position: fixed;
@@ -959,9 +941,7 @@ textarea {
   z-index: 100;
 }
 
-/* =========================================================
-   Responsive
-   ========================================================= */
+/* Responsive */
 
 @media (max-width: 980px) {
   .auth-shell {

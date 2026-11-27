@@ -7,8 +7,38 @@ window.HoldingsPage = function HoldingsPage({
   holdings,
   settings,
   onOpenChart,
+  onShowToast,
 }) {
   const h = React.createElement;
+  const [, setTick] = React.useState(0);
+
+  // Auto-refresh live LTP & P&L every 1.8 seconds
+  React.useEffect(() => {
+    let active = true;
+    const refreshAll = async () => {
+      try {
+        await window.TradeLensAPI.fetchAllStocks();
+        if (active) setTick((t) => t + 1);
+      } catch {
+        // Keep current prices if fetch fails
+      }
+    };
+    refreshAll();
+    const pollId = window.setInterval(refreshAll, 1800);
+    return () => {
+      active = false;
+      window.clearInterval(pollId);
+    };
+  }, []);
+
+  async function handleRefreshShare(e, symbol) {
+    e.stopPropagation();
+    const fresh = await window.TradeLensAPI.fetchLiveQuote(symbol);
+    setTick((t) => t + 1);
+    if (onShowToast) {
+      onShowToast(`${symbol}: ${window.TradeLensData.formatCurrency(fresh.price, settings.currency)}`);
+    }
+  }
 
   const enriched = holdings.map((item) => {
     const stock = window.TradeLensData.STOCKS.find((s) => s.symbol === item.symbol) || {
@@ -195,7 +225,17 @@ window.HoldingsPage = function HoldingsPage({
                     ),
                     h(
                       "td",
-                      { style: { textAlign: "right" } },
+                      { style: { textAlign: "right", whiteSpace: "nowrap" } },
+                      h(
+                        "button",
+                        {
+                          type: "button",
+                          className: "btn btn-secondary btn-sm",
+                          style: { marginRight: 6 },
+                          onClick: (e) => handleRefreshShare(e, row.symbol),
+                        },
+                        "↻ Live"
+                      ),
                       h(
                         "button",
                         {

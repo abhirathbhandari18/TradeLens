@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * PortfolioHandler — Handles GET /api/portfolio and POST /api/portfolio/deposit.
+ * Handles GET /api/portfolio and POST /api/portfolio/deposit.
  */
 public class PortfolioHandler implements HttpHandler {
 

@@ -1,9 +1,7 @@
 package com.tradelens.server;
 
 /**
- * TradeLensServer — Main entry point for the unified TradeLens Core Java backend.
- * Starts HttpServerApp on http://localhost:8080 with MarketSimulatorThread,
- * OrderMatcherThread, and all /api/* REST handlers.
+ * Main entry point for the TradeLens Java backend on port 8080.
  */
 public class TradeLensServer {
     public static final int DEFAULT_PORT = 8080;

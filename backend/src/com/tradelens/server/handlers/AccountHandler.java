@@ -17,8 +17,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * AccountHandler — GET /api/account and PUT /api/account.
- * Uses SessionManager for auth, UserDAO for MySQL persistence, and JsonUtil for JSON.
+ * Handles GET and PUT /api/account for user profile, KYC, and bank details.
  */
 public class AccountHandler implements HttpHandler {
 

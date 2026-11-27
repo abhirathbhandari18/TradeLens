@@ -20,6 +20,7 @@ window.DashboardPage = function DashboardPage({
   const [timeframe, setTimeframe] = React.useState(settings.defaultTimeframe || "1M");
   const [chartType, setChartType] = React.useState(settings.defaultChartType || "area");
   const [customTicker, setCustomTicker] = React.useState("");
+  const [liveSeries, setLiveSeries] = React.useState([]);
 
   // Quick Order Ticket state
   const [orderSide, setOrderSide] = React.useState("BUY");
@@ -27,29 +28,85 @@ window.DashboardPage = function DashboardPage({
   const [orderQty, setOrderQty] = React.useState("1");
   const [limitPrice, setLimitPrice] = React.useState("");
 
-  const loadQuote = React.useCallback(async (sym) => {
-    setLoadingQuote(true);
-    const data = await window.TradeLensAPI.fetchLiveQuote(sym);
-    setQuote(data);
-    setLoadingQuote(false);
-  }, []);
+  // Initialize moving chart series whenever symbol or timeframe changes
+  React.useEffect(() => {
+    const baseStock =
+      window.TradeLensData.STOCKS.find((s) => s.symbol === selectedSymbol) ||
+      window.TradeLensData.STOCKS[0];
+    setLiveSeries(
+      window.TradeLensData.generateSeries(selectedSymbol, baseStock.price, timeframe)
+    );
+  }, [selectedSymbol, timeframe]);
+
+  const appendLiveTick = React.useCallback(
+    (freshQuote) => {
+      if (!freshQuote || typeof freshQuote.price !== "number") return;
+      const nextPrice = Number(freshQuote.price.toFixed(2));
+      const nowLabel =
+        timeframe === "1D"
+          ? new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+          : new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+
+      setLiveSeries((prev) => {
+        if (!prev || prev.length === 0) {
+          return window.TradeLensData.generateSeries(freshQuote.symbol, nextPrice, timeframe);
+        }
+        const last = prev[prev.length - 1];
+        if (timeframe === "1D") {
+          // Shift window and append live tick so the 1D graph visibly moves every update
+          const nextPoint = {
+            label: nowLabel,
+            open: last.close,
+            high: Math.max(last.close, nextPrice),
+            low: Math.min(last.close, nextPrice),
+            close: nextPrice,
+            volume: last.volume,
+          };
+          const trimmed = prev.length >= 40 ? prev.slice(1) : prev;
+          return [...trimmed, nextPoint];
+        }
+        // For multi-day timeframes, update the latest candle/point live
+        const updatedLast = {
+          ...last,
+          close: nextPrice,
+          high: Math.max(last.high, nextPrice),
+          low: Math.min(last.low, nextPrice),
+        };
+        return [...prev.slice(0, -1), updatedLast];
+      });
+    },
+    [timeframe]
+  );
+
+  const loadQuote = React.useCallback(
+    async (sym) => {
+      setLoadingQuote(true);
+      const data = await window.TradeLensAPI.fetchLiveQuote(sym);
+      setQuote(data);
+      appendLiveTick(data);
+      setLoadingQuote(false);
+      return data;
+    },
+    [appendLiveTick]
+  );
 
   React.useEffect(() => {
     loadQuote(selectedSymbol);
 
-    // Poll Java backend every 1.8 seconds for fresh live stock prices
+    // Poll Java backend every 1.8 seconds so prices and the graph move live
     const pollId = window.setInterval(async () => {
       try {
         await window.TradeLensAPI.fetchAllStocks();
         const fresh = await window.TradeLensAPI.fetchLiveQuote(selectedSymbol);
         setQuote(fresh);
+        appendLiveTick(fresh);
       } catch {
         // Keep last displayed quote if backend is temporarily unreachable
       }
     }, 1800);
 
     return () => window.clearInterval(pollId);
-  }, [selectedSymbol, settings.apiKey, settings.provider, loadQuote]);
+  }, [selectedSymbol, settings.apiKey, settings.provider, loadQuote, appendLiveTick]);
 
   const activeStock =
     quote ||
@@ -58,10 +115,7 @@ window.DashboardPage = function DashboardPage({
 
   const isWatchlisted = watchlist.some((w) => w.symbol === activeStock.symbol);
 
-  const series = React.useMemo(
-    () => window.TradeLensData.generateSeries(activeStock.symbol, activeStock.price, timeframe),
-    [activeStock.symbol, activeStock.price, timeframe]
-  );
+  const series = liveSeries;
 
   // Compute change & direction for the selected duration so the rate badge and graph color always match
   const periodChange =
@@ -445,16 +499,39 @@ window.DashboardPage = function DashboardPage({
                 ),
                 h(
                   "div",
-                  { style: { textAlign: "right" } },
+                  { style: { display: "flex", alignItems: "center", gap: 8 } },
                   h(
                     "div",
-                    { className: "mono", style: { fontWeight: 600, fontSize: "13.5px" } },
-                    window.TradeLensData.formatCurrency(stock.price, settings.currency)
+                    { style: { textAlign: "right" } },
+                    h(
+                      "div",
+                      { className: "mono", style: { fontWeight: 600, fontSize: "13.5px" } },
+                      window.TradeLensData.formatCurrency(stock.price, settings.currency)
+                    ),
+                    h(
+                      "div",
+                      { className: `mono ${up ? "text-gain" : "text-loss"}`, style: { fontSize: "12px" } },
+                      `${up ? "+" : ""}${stock.changePercent.toFixed(2)}%`
+                    )
                   ),
                   h(
-                    "div",
-                    { className: `mono ${up ? "text-gain" : "text-loss"}`, style: { fontSize: "12px" } },
-                    `${up ? "+" : ""}${stock.changePercent.toFixed(2)}%`
+                    "button",
+                    {
+                      type: "button",
+                      className: "btn btn-secondary btn-sm",
+                      title: `Get latest price for ${stock.symbol}`,
+                      style: { padding: "3px 7px" },
+                      onClick: async (e) => {
+                        e.stopPropagation();
+                        const fresh = await window.TradeLensAPI.fetchLiveQuote(stock.symbol);
+                        if (stock.symbol === activeStock.symbol) {
+                          setQuote(fresh);
+                          appendLiveTick(fresh);
+                        }
+                        onShowToast(`${stock.symbol}: ${window.TradeLensData.formatCurrency(fresh.price, settings.currency)}`);
+                      },
+                    },
+                    "↻"
                   )
                 )
               );

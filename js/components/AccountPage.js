@@ -40,6 +40,40 @@ window.AccountPage = function AccountPage({
   const [backendUrl, setBackendUrl] = React.useState(
     settings.backendUrl || "http://localhost:8080/api"
   );
+  const [loading, setLoading] = React.useState(false);
+  const [savingProfile, setSavingProfile] = React.useState(false);
+  const [savingBank, setSavingBank] = React.useState(false);
+
+  React.useEffect(() => {
+    let mounted = true;
+    (async () => {
+      setLoading(true);
+      try {
+        const fresh = await window.TradeLensAPI.getAccount();
+        if (mounted && fresh) {
+          onUpdateUser(fresh);
+          setName(fresh.name || "");
+          setEmail(fresh.email || "");
+          setPhone(fresh.phone || "");
+          setPanCard(fresh.panCard || "");
+          setDob(fresh.dob || "");
+          setTradingStyle(fresh.tradingStyle || "Swing Trader");
+          setBankName(fresh.bankName || "");
+          setAccountNumber(fresh.accountNumber || "");
+          setIfscCode(fresh.ifscCode || "");
+          setAccountType(fresh.accountType || "Savings");
+          setDematId(fresh.dematId || "");
+        }
+      } catch {
+        // Keep current session user if offline
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   async function handleProfileSave(e) {
     e.preventDefault();
@@ -48,16 +82,23 @@ window.AccountPage = function AccountPage({
       onShowToast("Name and email cannot be empty.");
       return;
     }
-    const updated = await window.TradeLensAPI.updateAccount({
-      name: name.trim(),
-      email: email.trim(),
-      phone: phone.trim(),
-      panCard: panCard.trim().toUpperCase(),
-      dob,
-      tradingStyle,
-    });
-    onUpdateUser(updated);
-    onShowToast("Profile & KYC details updated");
+    setSavingProfile(true);
+    try {
+      const updated = await window.TradeLensAPI.updateAccount({
+        name: name.trim(),
+        email: email.trim(),
+        phone: phone.trim(),
+        panCard: panCard.trim().toUpperCase(),
+        dob,
+        tradingStyle,
+      });
+      onUpdateUser(updated);
+      onShowToast("Profile & KYC details updated");
+    } catch (err) {
+      onShowToast(err.message);
+    } finally {
+      setSavingProfile(false);
+    }
   }
 
   async function handleBankSave(e) {
@@ -67,15 +108,22 @@ window.AccountPage = function AccountPage({
       onShowToast("Please fill in bank name, account number, and IFSC code.");
       return;
     }
-    const updated = await window.TradeLensAPI.updateAccount({
-      bankName: bankName.trim(),
-      accountNumber: accountNumber.trim(),
-      ifscCode: ifscCode.trim().toUpperCase(),
-      accountType,
-      dematId: dematId.trim(),
-    });
-    onUpdateUser(updated);
-    onShowToast("Bank & Demat details saved");
+    setSavingBank(true);
+    try {
+      const updated = await window.TradeLensAPI.updateAccount({
+        bankName: bankName.trim(),
+        accountNumber: accountNumber.trim(),
+        ifscCode: ifscCode.trim().toUpperCase(),
+        accountType,
+        dematId: dematId.trim(),
+      });
+      onUpdateUser(updated);
+      onShowToast("Bank & Demat details saved");
+    } catch (err) {
+      onShowToast(err.message);
+    } finally {
+      setSavingBank(false);
+    }
   }
 
   function handleBackendSave(e) {

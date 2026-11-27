@@ -63,15 +63,27 @@
 
     async function handleToggleWatchlist(symbol) {
       const exists = watchlist.some((w) => w.symbol === symbol);
-      const next = exists
-        ? watchlist.filter((w) => w.symbol !== symbol)
-        : [...watchlist, { symbol, targetPrice: "—", note: "Added from Dashboard" }];
-      setWatchlist(await window.TradeLensAPI.saveWatchlist(next));
-      showToast(exists ? `Removed ${symbol} from watchlist` : `Added ${symbol} to watchlist`);
+      try {
+        const next = exists
+          ? await window.TradeLensAPI.removeFromWatchlist(symbol)
+          : await window.TradeLensAPI.addToWatchlist(symbol);
+        setWatchlist(next);
+        showToast(exists ? `Removed ${symbol} from watchlist` : `Added ${symbol} to watchlist`);
+      } catch (err) {
+        showToast(err.message);
+      }
     }
 
-    async function handleUpdateWatchlist(nextList) {
-      setWatchlist(await window.TradeLensAPI.saveWatchlist(nextList));
+    async function handleUpdateWatchlist(nextList, removedSymbol) {
+      if (removedSymbol) {
+        try {
+          setWatchlist(await window.TradeLensAPI.removeFromWatchlist(removedSymbol));
+        } catch (err) {
+          showToast(err.message);
+        }
+      } else {
+        setWatchlist(nextList);
+      }
     }
 
     async function handlePlaceOrder(orderInput) {
@@ -305,6 +317,7 @@
               onToggleWatchlist: handleToggleWatchlist,
               onOpenChart: handleOpenChart,
               settings,
+              onShowToast: showToast,
             }),
           activePage === "watchlist" &&
             h(window.WatchlistPage, {
@@ -329,6 +342,7 @@
               holdings,
               settings,
               onOpenChart: handleOpenChart,
+              onShowToast: showToast,
             }),
           activePage === "orders" &&
             h(window.OrdersPage, {

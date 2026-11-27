@@ -10,10 +10,13 @@ import com.tradelens.model.Stock;
 import com.tradelens.server.handlers.*;
 import com.tradelens.util.JsonUtil;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -58,6 +61,7 @@ public class HttpServerApp {
         newServer.createContext("/api/account", new AccountHandler());
 
         newServer.createContext("/api/health", this::handleHealthCheck);
+        newServer.createContext("/", this::handleStaticFrontend);
 
         serverExecutor = Executors.newCachedThreadPool();
         newServer.setExecutor(serverExecutor);
@@ -121,6 +125,47 @@ public class HttpServerApp {
         response.put("version", "1.0 - MySQL & JDBC");
         byte[] bytes = JsonUtil.toJson(response).getBytes(StandardCharsets.UTF_8);
         exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
+        exchange.sendResponseHeaders(200, bytes.length);
+        try (OutputStream output = exchange.getResponseBody()) {
+            output.write(bytes);
+        }
+    }
+
+    /** Serves index.html, css/*, and js/* so http://localhost:8080 hosts the complete website. */
+    private void handleStaticFrontend(HttpExchange exchange) throws IOException {
+        if (!"GET".equalsIgnoreCase(exchange.getRequestMethod())) {
+            exchange.sendResponseHeaders(405, -1);
+            return;
+        }
+        String reqPath = exchange.getRequestURI().getPath();
+        if ("/".equals(reqPath) || reqPath.isEmpty()) {
+            reqPath = "/index.html";
+        }
+        String relPath = reqPath.startsWith("/") ? reqPath.substring(1) : reqPath;
+        if (relPath.contains("..")) {
+            exchange.sendResponseHeaders(403, -1);
+            return;
+        }
+
+        File rootDir = new File("index.html").exists() ? new File(".") : new File("..");
+        Path filePath = rootDir.toPath().resolve(relPath).normalize();
+        if (!Files.exists(filePath) || Files.isDirectory(filePath)) {
+            byte[] notFound = "Not Found".getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(404, notFound.length);
+            try (OutputStream output = exchange.getResponseBody()) {
+                output.write(notFound);
+            }
+            return;
+        }
+
+        String contentType = "text/plain; charset=UTF-8";
+        if (relPath.endsWith(".html")) contentType = "text/html; charset=UTF-8";
+        else if (relPath.endsWith(".css")) contentType = "text/css; charset=UTF-8";
+        else if (relPath.endsWith(".js")) contentType = "application/javascript; charset=UTF-8";
+        else if (relPath.endsWith(".json")) contentType = "application/json; charset=UTF-8";
+
+        byte[] bytes = Files.readAllBytes(filePath);
+        exchange.getResponseHeaders().set("Content-Type", contentType);
         exchange.sendResponseHeaders(200, bytes.length);
         try (OutputStream output = exchange.getResponseBody()) {
             output.write(bytes);

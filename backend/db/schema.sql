@@ -1,8 +1,7 @@
--- TradeLens Unified Database Schema (MySQL 8.0+)
--- Combines Divyansh's User/KYC/Bank schema with Arnav & Bhumika's Trading/Market schema
+-- TradeLens MySQL Schema (Aiven / MySQL 8.0+)
 
-CREATE DATABASE IF NOT EXISTS tradelens_db;
-USE tradelens_db;
+CREATE DATABASE IF NOT EXISTS defaultdb;
+USE defaultdb;
 
 DROP TABLE IF EXISTS watchlist;
 DROP TABLE IF EXISTS orders;
@@ -10,7 +9,7 @@ DROP TABLE IF EXISTS holdings;
 DROP TABLE IF EXISTS stocks;
 DROP TABLE IF EXISTS users;
 
--- 1. STOCKS TABLE (20 NSE Stocks)
+-- 1. Stocks table (20 NSE shares)
 CREATE TABLE stocks (
     symbol VARCHAR(20) PRIMARY KEY,
     company_name VARCHAR(100) NOT NULL,
@@ -22,7 +21,7 @@ CREATE TABLE stocks (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- 2. USERS TABLE (Auth + KYC + Bank/Demat + Wallet Balance)
+-- 2. Users table (profile, KYC, bank details, wallet)
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     trade_id VARCHAR(30) UNIQUE,
@@ -43,7 +42,7 @@ CREATE TABLE users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 3. HOLDINGS TABLE
+-- 3. Holdings table
 CREATE TABLE holdings (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -56,7 +55,7 @@ CREATE TABLE holdings (
     CONSTRAINT uq_user_stock UNIQUE (user_id, symbol)
 );
 
--- 4. ORDERS TABLE
+-- 4. Orders table
 CREATE TABLE orders (
     order_id VARCHAR(36) PRIMARY KEY,
     user_id INT NOT NULL,
@@ -71,7 +70,7 @@ CREATE TABLE orders (
     CONSTRAINT fk_orders_stock FOREIGN KEY (symbol) REFERENCES stocks(symbol) ON DELETE CASCADE
 );
 
--- 5. WATCHLIST TABLE
+-- 5. Watchlist table
 CREATE TABLE watchlist (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,

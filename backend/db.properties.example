@@ -1,6 +1,10 @@
-# TradeLens Database Configuration Template
-# Copy this file to 'db.properties' and set your local MySQL credentials.
+# TradeLens Database & Market API Configuration Template
+# Copy this file to 'db.properties' and set your Aiven MySQL & API credentials.
 
-db.url=jdbc:mysql://localhost:3306/tradelens_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-db.user=root
-db.password=your_mysql_password_here
+db.url=jdbc:mysql://YOUR_AIVEN_HOST:10729/defaultdb?sslMode=REQUIRED&serverTimezone=UTC
+db.user=avnadmin
+db.password=your_aiven_password_here
+
+api.provider=tapetide
+api.baseUrl=https://api.tapetide.com/v1
+api.token=your_tapetide_token_here

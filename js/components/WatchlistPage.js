@@ -12,11 +12,38 @@ window.WatchlistPage = function WatchlistPage({
   onShowToast,
 }) {
   const h = React.createElement;
+  const [, setTick] = React.useState(0);
+
+  // Auto-refresh live prices for watched stocks every 1.8 seconds
+  React.useEffect(() => {
+    let active = true;
+    const refreshAll = async () => {
+      try {
+        await window.TradeLensAPI.fetchAllStocks();
+        if (active) setTick((t) => t + 1);
+      } catch {
+        // Keep current prices if fetch fails
+      }
+    };
+    refreshAll();
+    const pollId = window.setInterval(refreshAll, 1800);
+    return () => {
+      active = false;
+      window.clearInterval(pollId);
+    };
+  }, []);
+
+  async function handleRefreshShare(e, sym) {
+    e.stopPropagation();
+    const fresh = await window.TradeLensAPI.fetchLiveQuote(sym);
+    setTick((t) => t + 1);
+    onShowToast(`${sym}: ${window.TradeLensData.formatCurrency(fresh.price, settings.currency)}`);
+  }
 
   function handleRemove(e, sym) {
     e.stopPropagation();
     const next = watchlist.filter((item) => item.symbol !== sym);
-    onUpdateWatchlist(next);
+    onUpdateWatchlist(next, sym);
     onShowToast(`Removed ${sym} from watchlist`);
   }
 
@@ -148,6 +175,16 @@ window.WatchlistPage = function WatchlistPage({
                     h(
                       "td",
                       { style: { textAlign: "right", whiteSpace: "nowrap" } },
+                      h(
+                        "button",
+                        {
+                          type: "button",
+                          className: "btn btn-secondary btn-sm",
+                          style: { marginRight: 6 },
+                          onClick: (e) => handleRefreshShare(e, stock.symbol),
+                        },
+                        "↻ Live"
+                      ),
                       h(
                         "button",
                         {

@@ -1,7 +1,12 @@
 out/
+bin/
 certs/
 db-error.txt
 TestDBConnection.java
 bhumika-db-review.java
 bhumika-db-review.txt
 review-db/
+db.properties
+backend/db.properties
+.DS_Store
+backend/.DS_Store

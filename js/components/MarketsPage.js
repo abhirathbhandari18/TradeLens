@@ -8,11 +8,49 @@ window.MarketsPage = function MarketsPage({
   onToggleWatchlist,
   onOpenChart,
   settings,
+  onShowToast,
 }) {
   const h = React.createElement;
   const [filterText, setFilterText] = React.useState("");
   const [selectedSector, setSelectedSector] = React.useState("All");
-  const [sortBy, setSortBy] = React.useState("default"); // "default" | "gainers" | "losers" | "price"
+  const [sortBy, setSortBy] = React.useState("default");
+  const [, setTick] = React.useState(0);
+
+  // Auto-refresh all NSE shares every 1.8 seconds
+  React.useEffect(() => {
+    let active = true;
+    const refreshAll = async () => {
+      try {
+        await window.TradeLensAPI.fetchAllStocks();
+        if (active) setTick((t) => t + 1);
+      } catch {
+        // Keep current prices if fetch fails
+      }
+    };
+    refreshAll();
+    const pollId = window.setInterval(refreshAll, 1800);
+    return () => {
+      active = false;
+      window.clearInterval(pollId);
+    };
+  }, []);
+
+  async function handleRefreshAllClick() {
+    await window.TradeLensAPI.fetchAllStocks();
+    setTick((t) => t + 1);
+    if (onShowToast) {
+      onShowToast("Refreshed all NSE share prices");
+    }
+  }
+
+  async function handleRefreshShare(e, symbol) {
+    e.stopPropagation();
+    const fresh = await window.TradeLensAPI.fetchLiveQuote(symbol);
+    setTick((t) => t + 1);
+    if (onShowToast) {
+      onShowToast(`${symbol}: ${window.TradeLensData.formatCurrency(fresh.price, settings.currency)}`);
+    }
+  }
 
   const allStocks = window.TradeLensData.STOCKS;
   const sectors = ["All", ...Array.from(new Set(allStocks.map((s) => s.sector)))];
@@ -98,6 +136,15 @@ window.MarketsPage = function MarketsPage({
           h("option", { value: "gainers" }, "Top Gainers"),
           h("option", { value: "losers" }, "Top Losers"),
           h("option", { value: "price" }, "Highest Price")
+        ),
+        h(
+          "button",
+          {
+            type: "button",
+            className: "btn btn-secondary",
+            onClick: handleRefreshAllClick,
+          },
+          "↻ Refresh All"
         )
       )
     ),
@@ -199,7 +246,17 @@ window.MarketsPage = function MarketsPage({
                 h("td", { className: "mono" }, stock.peRatio),
                 h(
                   "td",
-                  { style: { textAlign: "right" } },
+                  { style: { textAlign: "right", whiteSpace: "nowrap" } },
+                  h(
+                    "button",
+                    {
+                      type: "button",
+                      className: "btn btn-secondary btn-sm",
+                      style: { marginRight: 6 },
+                      onClick: (e) => handleRefreshShare(e, stock.symbol),
+                    },
+                    "↻ Live"
+                  ),
                   h(
                     "button",
                     {
